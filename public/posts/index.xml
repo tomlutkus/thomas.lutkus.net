@@ -6,14 +6,15 @@
     <description>Recent content in Posts on Thomas Lutkus</description>
     <generator>Hugo -- 0.154.2</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 08 Jan 2026 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 08 Jan 2026 16:16:29 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Hello World</title>
-      <link>http://localhost:1313/posts/hello-world/</link>
-      <pubDate>Thu, 08 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/posts/hello-world/</guid>
-      <description>&lt;p&gt;First post. More to come on Linux, infrastructure, and automation.&lt;/p&gt;</description>
+      <title>Why Have a Blog</title>
+      <link>http://localhost:1313/posts/why-have-a-blog/</link>
+      <pubDate>Thu, 08 Jan 2026 16:16:29 +0000</pubDate>
+      <guid>http://localhost:1313/posts/why-have-a-blog/</guid>
+      <description>&lt;p&gt;Hi there! I&amp;rsquo;m an infrastructure engineer with 15+ years of experience building and supporting Linux and network infrastructure. I built a team from scratch, I&amp;rsquo;m a &amp;ldquo;wear all hats&amp;rdquo; guy at my current job. More importantly, I&amp;rsquo;m a husband and father.&lt;/p&gt;
+&lt;p&gt;This blog is for sharing my knowledge and experiences in the tech industry. It&amp;rsquo;s also for writing thoughts and opinions. My hope is to express things which are meaningful and impactful. I also mean to write about technology and privacy.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>

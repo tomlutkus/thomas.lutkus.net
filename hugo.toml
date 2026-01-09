@@ -3,6 +3,11 @@ languageCode = "en-us"
 title = "Thomas Lutkus"
 theme = "PaperMod"
 
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+  series = "series"
+
 [params]
   author = "Thomas Lutkus"
   description = "Infrastructure engineering, Linux, Automation"
@@ -12,10 +17,22 @@ theme = "PaperMod"
 
 [menu]
   [[menu.main]]
-    name = "Blog"
+    name = "Posts"
     url = "/posts/"
     weight = 1
   [[menu.main]]
     name = "About"
     url = "/about/"
     weight = 2
+  [[menu.main]]
+    name = "Tags"
+    url = "/tags/"
+    weight = 3
+  [[menu.main]]
+    name = "Series"
+    url = "/series/"
+    weight = 4
+  [[menu.main]]
+    name = "Categories"
+    url = "/categories/"
+    weight = 5

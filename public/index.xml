@@ -2,25 +2,25 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Thomas Lutkus</title>
-    <link>http://localhost:1313/</link>
+    <link>https://thomas.lutkus.net/</link>
     <description>Recent content on Thomas Lutkus</description>
     <generator>Hugo -- 0.154.2</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 08 Jan 2026 16:16:29 +0000</lastBuildDate>
-    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://thomas.lutkus.net/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Why Have a Blog</title>
-      <link>http://localhost:1313/posts/why-have-a-blog/</link>
+      <link>https://thomas.lutkus.net/posts/why-have-a-blog/</link>
       <pubDate>Thu, 08 Jan 2026 16:16:29 +0000</pubDate>
-      <guid>http://localhost:1313/posts/why-have-a-blog/</guid>
+      <guid>https://thomas.lutkus.net/posts/why-have-a-blog/</guid>
       <description>&lt;p&gt;Hi there! I&amp;rsquo;m an infrastructure engineer with 15+ years of experience building and supporting Linux and network infrastructure. I built a team from scratch, I&amp;rsquo;m a &amp;ldquo;wear all hats&amp;rdquo; guy at my current job. More importantly, I&amp;rsquo;m a husband and father.&lt;/p&gt;
 &lt;p&gt;This blog is for sharing my knowledge and experiences in the tech industry. It&amp;rsquo;s also for writing thoughts and opinions. My hope is to express things which are meaningful and impactful. I also mean to write about technology and privacy.&lt;/p&gt;</description>
     </item>
     <item>
       <title>About</title>
-      <link>http://localhost:1313/about/</link>
+      <link>https://thomas.lutkus.net/about/</link>
       <pubDate>Thu, 08 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/about/</guid>
+      <guid>https://thomas.lutkus.net/about/</guid>
       <description>&lt;p&gt;Infrastructure engineer based in Ireland. 15+ years building and supporting Linux systems across enterprise environments.&lt;/p&gt;
 &lt;p&gt;I&amp;rsquo;ve worked at AT&amp;amp;T, IBM, BT, Zalando, HelloFresh, TomTom, and VMware. Currently focused on virtualization Linux and Virtualization (Proxmox, RHEL), automation (Ansible), and security compliance.&lt;/p&gt;
 &lt;p&gt;Pursuing RHCSA and RHCE certifications in 2026.&lt;/p&gt;

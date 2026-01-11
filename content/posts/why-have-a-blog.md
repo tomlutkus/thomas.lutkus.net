@@ -1,7 +1,9 @@
 +++
 date = '2026-01-08T16:16:29Z'
 draft = false
-title = 'Why Have a Blog'
+title = 'Why Have a Blog?'
+tags = ["thoughts"]
+categories = ["personal"]
 +++
 
 Hi there! I'm an infrastructure engineer with 15+ years of experience building and supporting Linux and network infrastructure. I built a team from scratch, I'm a "wear all hats" guy at my current job. More importantly, I'm a husband and father.

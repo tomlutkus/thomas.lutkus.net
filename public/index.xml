@@ -2,25 +2,42 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Thomas Lutkus</title>
-    <link>https://thomas.lutkus.net/</link>
+    <link>http://localhost:1313/</link>
     <description>Recent content on Thomas Lutkus</description>
     <generator>Hugo -- 0.154.2</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 08 Jan 2026 16:16:29 +0000</lastBuildDate>
-    <atom:link href="https://thomas.lutkus.net/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 11 Jan 2026 19:03:05 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Why Have a Blog</title>
-      <link>https://thomas.lutkus.net/posts/why-have-a-blog/</link>
+      <title>Systemd Service Units</title>
+      <link>http://localhost:1313/posts/systemd-service-units/</link>
+      <pubDate>Sun, 11 Jan 2026 19:03:05 +0000</pubDate>
+      <guid>http://localhost:1313/posts/systemd-service-units/</guid>
+      <description>&lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;Systemd service units are files which define a service, and when/how it&amp;rsquo;s started. They will normally refer to a program or script to be executed. There are 3 fundamental sections on a service file:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;[Unit]&lt;/code&gt; is where the description resides, as well as the conditions to initialize the service, such as requirements and dependencies.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;[Service]&lt;/code&gt; is where the parameters which determine how to run the service reside.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;[Install]&lt;/code&gt; is how to enable the unit. It&amp;rsquo;s optional, but normally necessary.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Why Have a Blog?</title>
+      <link>http://localhost:1313/posts/why-have-a-blog/</link>
       <pubDate>Thu, 08 Jan 2026 16:16:29 +0000</pubDate>
-      <guid>https://thomas.lutkus.net/posts/why-have-a-blog/</guid>
+      <guid>http://localhost:1313/posts/why-have-a-blog/</guid>
       <description>&lt;p&gt;Hi there! I&amp;rsquo;m an infrastructure engineer with 15+ years of experience building and supporting Linux and network infrastructure. I built a team from scratch, I&amp;rsquo;m a &amp;ldquo;wear all hats&amp;rdquo; guy at my current job. More importantly, I&amp;rsquo;m a husband and father.&lt;/p&gt;
 &lt;p&gt;This blog is for sharing my knowledge and experiences in the tech industry. It&amp;rsquo;s also for writing thoughts and opinions. My hope is to express things which are meaningful and impactful. I also mean to write about technology and privacy.&lt;/p&gt;</description>
     </item>
     <item>
       <title>About</title>
-      <link>https://thomas.lutkus.net/about/</link>
+      <link>http://localhost:1313/about/</link>
       <pubDate>Thu, 08 Jan 2026 00:00:00 +0000</pubDate>
-      <guid>https://thomas.lutkus.net/about/</guid>
+      <guid>http://localhost:1313/about/</guid>
       <description>&lt;p&gt;Infrastructure engineer based in Ireland. 15+ years building and supporting Linux systems across enterprise environments.&lt;/p&gt;
 &lt;p&gt;I&amp;rsquo;ve worked at AT&amp;amp;T, IBM, BT, Zalando, HelloFresh, TomTom, and VMware. Currently focused on virtualization Linux and Virtualization (Proxmox, RHEL), automation (Ansible), and security compliance.&lt;/p&gt;
 &lt;p&gt;Pursuing RHCSA and RHCE certifications in 2026.&lt;/p&gt;

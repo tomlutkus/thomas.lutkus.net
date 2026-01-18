@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Virsh on Thomas Lutkus</title>
+    <link>http://localhost:1313/tags/virsh/</link>
+    <description>Recent content in Virsh on Thomas Lutkus</description>
+    <generator>Hugo -- 0.154.5</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 18 Jan 2026 19:17:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/virsh/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Virtualization - Setting up a lab with one PC and install Proxmox (Part 1 of 5)</title>
+      <link>http://localhost:1313/posts/virtualization-lab-part1/</link>
+      <pubDate>Sun, 18 Jan 2026 19:17:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/virtualization-lab-part1/</guid>
+      <description>&lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;I have some cool experience deploying and configuring a Proxmox cluster with High Availability and fully redundant Ceph in production. I thought it&amp;rsquo;d be cool to share my insights. Since I have been meaning to redeploy my lab on my laptop to test some things, I thought this is a good time. To start, this post will be about setting up the lab environment and install one Proxmox instance. I&amp;rsquo;m going to write a few other tutorials as I go. You are free to use the content here as you see fit. I would appreciate being credited, but that&amp;rsquo;s not a requirement.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

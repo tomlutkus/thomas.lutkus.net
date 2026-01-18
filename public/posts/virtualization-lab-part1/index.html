@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Virtualization - Setting up a lab with one PC and install Proxmox (Part 1 of 5) | Thomas Lutkus</title>
+<meta name="keywords" content="proxmox, homelab, virsh">
+<meta name="description" content="Introduction
+I have some cool experience deploying and configuring a Proxmox cluster with High Availability and fully redundant Ceph in production. I thought it&rsquo;d be cool to share my insights. Since I have been meaning to redeploy my lab on my laptop to test some things, I thought this is a good time. To start, this post will be about setting up the lab environment and install one Proxmox instance. I&rsquo;m going to write a few other tutorials as I go. You are free to use the content here as you see fit. I would appreciate being credited, but that&rsquo;s not a requirement.">
+<meta name="author" content="Thomas Lutkus">
+<link rel="canonical" href="http://localhost:1313/posts/virtualization-lab-part1/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.343cc480b9ffc8f04ccbe5e968ad674880cab773ec19905e93033065c1e7a804.css" integrity="sha256-NDzEgLn/yPBMy&#43;XpaK1nSIDKt3PsGZBekwMwZcHnqAQ=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/virtualization-lab-part1/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            .list::-webkit-scrollbar-thumb {
+                border-color: var(--code-bg);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="Thomas Lutkus (Alt + H)">Thomas Lutkus</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/series/" title="Series">
+                    <span>Series</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/categories/" title="Categories">
+                    <span>Categories</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Virtualization - Setting up a lab with one PC and install Proxmox (Part 1 of 5)
+    </h1>
+    <div class="post-meta"><span title='2026-01-18 19:17:00 +0000 UTC'>January 18, 2026</span>&nbsp;·&nbsp;<span>9 min</span>&nbsp;·&nbsp;<span>Thomas Lutkus</span>
+
+</div>
+  </header> 
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>I have some cool experience deploying and configuring a Proxmox cluster with High Availability and fully redundant Ceph in production. I thought it&rsquo;d be cool to share my insights. Since I have been meaning to redeploy my lab on my laptop to test some things, I thought this is a good time. To start, this post will be about setting up the lab environment and install one Proxmox instance. I&rsquo;m going to write a few other tutorials as I go. You are free to use the content here as you see fit. I would appreciate being credited, but that&rsquo;s not a requirement.</p>
+<p>This a drawing of a production-ready virtualization cluster I designed. Please note that this design works with whatever you prefer: Proxmox, XCP-ng, VMware, Linux. I&rsquo;m using Proxmox because it&rsquo;s very approachable and free.</p>
+<p><img alt="Virtualization Cluster Physical Network" loading="lazy" src="/posts/virtualization-lab-part1/Virtualization_Cluster_Physical_Network.png"></p>
+<p>It ticks all the boxes you&rsquo;d need for a production environment:</p>
+<ul>
+<li><strong>High Availability:</strong> 3 virtualization nodes capable of Corosync or whatever else you virtualization platform uses. You will notice that I deployed 2 virtual firewalls. With pfSense or opnsense you can also have the firewalls doing HA.</li>
+<li><strong>Redundancy:</strong> The 3 virtualization nodes can have fully redundant Ceph. If you have enough NICs on the hosts and the switches, you can also have redundant network. The Hetzner vSwitch also offers a flexible solution if you prefer to approach this with just one firewall VM on HA: the IP will follow it seamlessly if it&rsquo;s moved to a different virtualization node.</li>
+<li><strong>Network segmentation:</strong> Separate physical networks for different purposes. Good for security, great for performance.</li>
+</ul>
+<p>A lot of Virtualization labs I see floating around in tutorials are built using a bunch of real hardware. While that&rsquo;s undeniably cool and wholesome, we not always have the luxury of getting a bunch of extra computers. To be honest, nowadays I think it&rsquo;s kind of wasteful in terms of energy, and also in terms of having idle PCs just for this if you end up powering them off. I think that Linux virtualization is mature enough that you can do really cool stuff with just one computer. In this series I will teach you to do precisely that.</p>
+<h4 id="requirements">Requirements<a hidden class="anchor" aria-hidden="true" href="#requirements">#</a></h4>
+<p>I&rsquo;m not gonna lie: you need somewhat robust hardware for this. The steps I&rsquo;m taking are on an 8c/16t AMD processor, with 96GB RAM and 2TB NVMe drives. The minimum I would recommend: 8c/16t, 64GB RAM, 1TB NVMe drive. Maybe you could get away with 32GB RAM and 512GB NVMe. This will work on Arch Linux, but it&rsquo;s easy to transport to another distribution. If you&rsquo;re following along, you could just translate the steps to your setup using your favorite AI tool. In the future I may add some notes on how to do this on Ubuntu and RHEL. For the networking part, I&rsquo;m using <code>NetworkManager</code> with <code>nmcli</code>.</p>
+<p>This is the lab we will be building, I think this is remarkably close to the production system:</p>
+<p><img alt="Virtual Lab Network" loading="lazy" src="/posts/virtualization-lab-part1/Virtual_Lab_Network.png"></p>
+<h2 id="setting-up-the-environment">Setting Up the Environment<a hidden class="anchor" aria-hidden="true" href="#setting-up-the-environment">#</a></h2>
+<h3 id="1-setting-up-varliblibvirt">1. Setting up <code>/var/lib/libvirt</code><a hidden class="anchor" aria-hidden="true" href="#1-setting-up-varliblibvirt">#</a></h3>
+<p>If you go with the defaults, you could skip to #2. I, however, have a matter of personal preference: I like to do things from my <code>~/</code> directory, and on my machine I have a 2TB NVMe specifically allocated for <code>/home</code>. I thought I&rsquo;d go with symlinks, but I had some issues with this a while ago. I did some research and found out that bind mounts are the best approach: you get the same filesystem location exposed at two paths. Avoids all the potential weirdness from using symlinks for this. This is where all of your virtualization files, which consume a lot of disk space, will reside.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create ~/libvirt</span>
+</span></span><span style="display:flex;"><span>mkdir /home/<span style="color:#e6db74">${</span>USER<span style="color:#e6db74">}</span>/libvirt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create /var/lib/libvirt</span>
+</span></span><span style="display:flex;"><span>sudo mkdir /var/lib/libvirt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Add the entry to /etc/fstab</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;/home/</span><span style="color:#e6db74">${</span>USER<span style="color:#e6db74">}</span><span style="color:#e6db74">/libvirt /var/lib/libvirt none bind 0 0&#34;</span> | sudo tee -a /etc/fstab
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Reload so that you can apply</span>
+</span></span><span style="display:flex;"><span>systemctl daemon-reload
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Mount it</span>
+</span></span><span style="display:flex;"><span>mount -a
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test it</span>
+</span></span><span style="display:flex;"><span>touch ~/libvirt/testfile
+</span></span><span style="display:flex;"><span>ls /var/lib/libvirt/testfile
+</span></span></code></pre></div><p>My <code>/home</code> is encrypted on a separate volume as <code>/</code>. As long as the new mount is at the bottom of <code>/etc/fstab</code>, which it should, it should be handled automatically if you followed my steps.</p>
+<p>For this to work well, we need to manage directory permissions with ACLs, so that all the necessary users can operate in the directory:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Ensure ~/ is traversable</span>
+</span></span><span style="display:flex;"><span>chmod <span style="color:#ae81ff">755</span> ~/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set base permissions on libvirt dir</span>
+</span></span><span style="display:flex;"><span>chmod <span style="color:#ae81ff">775</span> ~/libvirt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Install the ACL package</span>
+</span></span><span style="display:flex;"><span>sudo pacman -S acl
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Apply rwx permissions for your user to all existing files/dirs recursively</span>
+</span></span><span style="display:flex;"><span>setfacl -R -m u:<span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span>:rwx ~/libvirt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set default ACL - new files/dirs created inside inherit these permission</span>
+</span></span><span style="display:flex;"><span>setfacl -R -d -m u:<span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span>:rwx ~/libvirt
+</span></span></code></pre></div><p>There will be a bunch of permission steps later if you are doing this.</p>
+<h3 id="2-configuring-the-virtualization-suite">2. Configuring the Virtualization Suite<a hidden class="anchor" aria-hidden="true" href="#2-configuring-the-virtualization-suite">#</a></h3>
+<h4 id="setting-up-the-system">Setting up the System<a hidden class="anchor" aria-hidden="true" href="#setting-up-the-system">#</a></h4>
+<p>We will now install the necessary virtualization packages:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo pacman -S libvirt qemu-full virt-manager dnsmasq ebtables dmidecode
+</span></span></code></pre></div><p>Once that&rsquo;s done, add your user to the <code>libvirt</code> group:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo usermod -aG libvirt <span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span>
+</span></span></code></pre></div><p>Then enable and start the <code>libvirtd</code> service:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl enable --now libvirtd
+</span></span></code></pre></div><p>And check if no errors with <code>systemctl status libvirtd</code>, it should show something like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>● libvirtd.service - libvirt legacy monolithic daemon
+</span></span><span style="display:flex;"><span>     Loaded: loaded <span style="color:#f92672">(</span>/usr/lib/systemd/system/libvirtd.service; enabled; preset: disabled<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>     Active: active <span style="color:#f92672">(</span>running<span style="color:#f92672">)</span> since Sun 2026-01-18 17:09:03 GMT; 5s ago
+</span></span><span style="display:flex;"><span> Invocation: 43007c7f51c445a485af01f5f3ba08f5
+</span></span><span style="display:flex;"><span>TriggeredBy: ● libvirtd.socket
+</span></span><span style="display:flex;"><span>             ● libvirtd-admin.socket
+</span></span><span style="display:flex;"><span>             ● libvirtd-ro.socket
+</span></span><span style="display:flex;"><span>       Docs: man:libvirtd<span style="color:#f92672">(</span>8<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>             https://libvirt.org/
+</span></span><span style="display:flex;"><span>   Main PID: <span style="color:#ae81ff">11650</span> <span style="color:#f92672">(</span>libvirtd<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>      Tasks: <span style="color:#ae81ff">21</span> <span style="color:#f92672">(</span>limit: 32768<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>     Memory: 8.6M <span style="color:#f92672">(</span>peak: 10M<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>        CPU: 695ms
+</span></span><span style="display:flex;"><span>     CGroup: /system.slice/libvirtd.service
+</span></span><span style="display:flex;"><span>             └─11650 /usr/bin/libvirtd --timeout <span style="color:#ae81ff">120</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Jan <span style="color:#ae81ff">18</span> 17:09:03 laptop systemd<span style="color:#f92672">[</span>1<span style="color:#f92672">]</span>: Starting libvirt legacy monolithic daemon...
+</span></span><span style="display:flex;"><span>Jan <span style="color:#ae81ff">18</span> 17:09:03 laptop systemd<span style="color:#f92672">[</span>1<span style="color:#f92672">]</span>: Started libvirt legacy monolithic daemon.
+</span></span></code></pre></div><p>Also check that the daemon is responding to commands with <code>virsh list -all</code>, it should return an empty table:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh list --all
+</span></span><span style="display:flex;"><span> Id   Name   State
+</span></span><span style="display:flex;"><span>--------------------
+</span></span></code></pre></div><p>Now you need to configure your user to connect to <code>qemu:///system</code> where the real networking happens, rather than <code>qemu:///session</code>:</p>
+<p>Add this line to your <code>.bashrc</code> file and reload your shell:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;export LIBVIRT_DEFAULT_URI=&#34;qemu:///system&#34;&#39;</span> &gt;&gt; ~/.bashrc
+</span></span><span style="display:flex;"><span>source ~/.bashrc
+</span></span></code></pre></div><p>Test with <code>virsh uri</code>, if it shows <code>qemu:///system</code>, you&rsquo;re good to go:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh uri
+</span></span><span style="display:flex;"><span>qemu:///system
+</span></span></code></pre></div><h4 id="setting-up-the-networks">Setting up the Networks<a hidden class="anchor" aria-hidden="true" href="#setting-up-the-networks">#</a></h4>
+<p>First we will set up the default NAT network with the settings we desire. It&rsquo;s likely already set up, so run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh net-stop default
+</span></span><span style="display:flex;"><span>virsh net-destroy default
+</span></span><span style="display:flex;"><span>virsh net-undefine default
+</span></span></code></pre></div><p>Then go to your <code>/var/lib/libvirt</code> directory (or <code>~/libvirt</code> if you followed the section #1) and <code>mkdir temp</code>. This is where we will leave template files. Once there <code>vim default.xml</code> and add this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>default<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;forward</span> <span style="color:#a6e22e">mode=</span><span style="color:#e6db74">&#34;nat&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;virbr0&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;192.168.122.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;dhcp&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&lt;range</span> <span style="color:#a6e22e">start=</span><span style="color:#e6db74">&#34;192.168.122.1&#34;</span> <span style="color:#a6e22e">end=</span><span style="color:#e6db74">&#34;192.168.122.253&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/dhcp&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/ip&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
+</span></span></code></pre></div><p>Then run the following commands to activate the network:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh net-define default.xml
+</span></span><span style="display:flex;"><span>virsh net-start default
+</span></span><span style="display:flex;"><span>virsh net-autostart default
+</span></span><span style="display:flex;"><span>virsh net-list --all
+</span></span></code></pre></div><p>We are going with a class C <code>192.168.122.0/24</code> subnet because it&rsquo;s already the default, and because it&rsquo;s very distinct from class A, which is what we will be using for the other subnets. Check that the interface <code>virbr0</code> exists:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ip a | grep virbr0
+</span></span><span style="display:flex;"><span>6: virbr0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 192.168.122.254/24 brd 192.168.122.255 scope global virbr0
+</span></span></code></pre></div><p>You will notice that the host, which will also be the gateway to the Proxmox VMs, is using IP ending in <code>.254</code>. That&rsquo;s a personal preference, as I like when we have <code>vm-pve1</code>, <code>vm-pve2</code> and <code>vm-pve3</code> to have their IPs ending in <code>.1</code>, <code>.2</code> and <code>.3</code> respectively. Keeps everything easy to remember and tidy.</p>
+<p>We will now configure the bridges which will simulate a virtual switch with separate VLANs. This is how we will configure the subnets:</p>
+<ul>
+<li><strong>HA/Corosync:</strong> will be on subnet <code>10.0.253.0/24</code> and bridge <code>ha-br</code>.</li>
+<li><strong>Ceph:</strong> will be on subnet <code>10.0.254.0/24</code> and bridge <code>ceph-br</code>.</li>
+<li><strong>Storage:</strong> will be on subnet <code>10.0.255.0/24</code> and bridge <code>st-br</code>.</li>
+<li><strong>VMs:</strong> These are the VMs which will run inside the virtual Proxmox nodes, they will be on subnet <code>10.0.1.0/24</code> and bridge <code>vm-br</code>.</li>
+</ul>
+<p>The logic for these addresses is that we would &ldquo;backbone&rdquo; infrastructure to be distinct from where our VMs are. I also choose IPs which will <em>probably</em> not collide with whatever configuration you have at home. I also think that is a good practice for production environments, to choose private IPs which will likely not conflict with home routers. In the case of the bridge <code>vm-br</code>: in a production environment you would probably have multiple VLANs and subnets there rather than just one, potentially servicing thousands of devices.</p>
+<p>Now you can copy the <code>.xml</code> bellow into your temp directory, using <code>vim</code> or whatever you prefer to create each file:</p>
+<p><strong>file: <code>ha-br.xml</code></strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>ha-br<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;ha-br&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;10.0.253.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
+</span></span></code></pre></div><p><strong>file: <code>ceph-br.xml</code></strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>ceph-br<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;ceph-br&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;10.0.254.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
+</span></span></code></pre></div><p><strong>file: <code>st-br.xml</code></strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>st-br<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;st-br&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;10.0.255.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
+</span></span></code></pre></div><p><strong>file: <code>vm-br.xml</code></strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>vm-br<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;vm-br&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;10.0.1.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
+</span></span></code></pre></div><p>After you&rsquo;re done, time to enable all of them. Let&rsquo;s use a <code>for</code> loop to save us some time:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> net in ha-br ceph-br st-br vm-br; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  virsh net-define <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>.xml
+</span></span><span style="display:flex;"><span>  virsh net-start <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span>  virsh net-autostart <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><p>Now when you check with <code>virsh net-list --all</code> this is what you should see:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>❯ virsh net-list --all
+</span></span><span style="display:flex;"><span> Name      State    Autostart   Persistent
+</span></span><span style="display:flex;"><span>--------------------------------------------
+</span></span><span style="display:flex;"><span> ceph-br   active   yes         yes
+</span></span><span style="display:flex;"><span> default   active   yes         yes
+</span></span><span style="display:flex;"><span> ha-br     active   yes         yes
+</span></span><span style="display:flex;"><span> st-br     active   yes         yes
+</span></span><span style="display:flex;"><span> vm-br     active   yes         yes
+</span></span></code></pre></div><p>And another quick check on your actual network interfaces:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> net in ha-br ceph-br st-br vm-br; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  ip a | grep <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><p>Which should give you something like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>6: virbr0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 192.168.122.254/24 brd 192.168.122.255 scope global virbr0
+</span></span><span style="display:flex;"><span>7: ha-br: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 10.0.253.254/24 brd 10.0.253.255 scope global ha-br
+</span></span><span style="display:flex;"><span>8: ceph-br: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 10.0.254.254/24 brd 10.0.254.255 scope global ceph-br
+</span></span><span style="display:flex;"><span>9: st-br: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 10.0.255.254/24 brd 10.0.255.255 scope global st-br
+</span></span><span style="display:flex;"><span>10: vm-br: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 10.0.1.254/24 brd 10.0.1.255 scope global vm-br
+</span></span></code></pre></div><p>This is it for network creation. I hate to end it in a cliffhanger, but such is life. Next week we will be configuring storage and creating the Proxmox VMs. Maybe we will will also be installing one instance. If you have some experience you could already go ahead and experiment with what we&rsquo;ve built so far.</p>
+<p>I hope to see you again soon!</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/proxmox/">Proxmox</a></li>
+      <li><a href="http://localhost:1313/tags/homelab/">Homelab</a></li>
+      <li><a href="http://localhost:1313/tags/virsh/">Virsh</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/systemd-service-units/">
+    <span class="title">Next »</span>
+    <br>
+    <span>Systemd Service Units</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">Thomas Lutkus</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

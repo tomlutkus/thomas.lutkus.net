@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5) | Thomas Lutkus</title>
+<meta name="keywords" content="proxmox, homelab, virsh">
+<meta name="description" content="Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5)
+1. Introduction
+Now, we will be deploying an enterprise-grade lab. Therefore we need to think about how we do things in production: we can&rsquo;t be clicking around and hoping for the best. This quickly compounds. We also need things to scale, to be idempotent (magic word for &ldquo;always works the same&rdquo;) and self-healing. As I see this series going right now, we will be iterating the design of our lab a little bit as we go, since there is always room for improving and learning. That being said, I have done some changes to Part 1 to keep things consistent with this new post, add some stuff and fix minor errors. You should check it out.">
+<meta name="author" content="Thomas Lutkus">
+<link rel="canonical" href="http://localhost:1313/posts/vlab_part-2/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.343cc480b9ffc8f04ccbe5e968ad674880cab773ec19905e93033065c1e7a804.css" integrity="sha256-NDzEgLn/yPBMy&#43;XpaK1nSIDKt3PsGZBekwMwZcHnqAQ=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/vlab_part-2/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            .list::-webkit-scrollbar-thumb {
+                border-color: var(--code-bg);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="Thomas Lutkus (Alt + H)">Thomas Lutkus</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/series/" title="Series">
+                    <span>Series</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/categories/" title="Categories">
+                    <span>Categories</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5)
+    </h1>
+    <div class="post-meta"><span title='2026-01-25 19:10:00 +0000 UTC'>January 25, 2026</span>&nbsp;·&nbsp;<span>11 min</span>&nbsp;·&nbsp;<span>Thomas Lutkus</span>
+
+</div>
+  </header> 
+  <div class="post-content"><h1 id="virtual-proxmox-lab---auto-install-proxmox-part-2-of-5">Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5)<a hidden class="anchor" aria-hidden="true" href="#virtual-proxmox-lab---auto-install-proxmox-part-2-of-5">#</a></h1>
+<h2 id="1-introduction">1. Introduction<a hidden class="anchor" aria-hidden="true" href="#1-introduction">#</a></h2>
+<p>Now, we will be deploying an enterprise-grade lab. Therefore we need to think about how we do things in production: we can&rsquo;t be clicking around and hoping for the best. This quickly compounds. We also need things to scale, to be idempotent (magic word for &ldquo;always works the same&rdquo;) and self-healing. As I see this series going right now, we will be iterating the design of our lab a little bit as we go, since there is always room for improving and learning. That being said, I have done some changes to Part 1 to keep things consistent with this new post, add some stuff and fix minor errors. You should check it out.</p>
+<h3 id="11-lab-design-progress">1.1. Lab Design Progress<a hidden class="anchor" aria-hidden="true" href="#11-lab-design-progress">#</a></h3>
+<p>You will notice that I introduced a file server in the new networking diagram. That will be useful later for our Proxmox Backup Server configuration. I also introduced some other VMs we will be configuring in this lab later in this series:</p>
+<p><img alt="Virtual Lab Network  Part 2" loading="lazy" src="/posts/vlab_part-2/vlab_net_part-2.png"></p>
+<h3 id="12-ip-and-mac-addresses">1.2. IP and MAC Addresses<a hidden class="anchor" aria-hidden="true" href="#12-ip-and-mac-addresses">#</a></h3>
+<p>This is the full table of the MAC and IP addresses we are going to be using. Notice that the <strong>vm</strong> network will not be directly accessible by the PVE cluster. Also notice that we are using <code>02:00:00</code> MAC addresses, which indicate a &ldquo;local administered address&rdquo; (LAA). That means we are specifying them as not a manufacturer-assigned address. Take a long look at the MAC addresses and the IP addresses to see that we are going with something that makes sense:</p>
+<table>
+  <thead>
+      <tr>
+          <th><strong>Node</strong></th>
+          <th><strong>Network</strong></th>
+          <th><strong>IP Address</strong></th>
+          <th><strong>MAC Address</strong></th>
+          <th><strong>Alias</strong></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>pve-01</strong></td>
+          <td>WAN</td>
+          <td><code>192.168.122.1</code></td>
+          <td><code>02:00:00:00:01:01</code></td>
+          <td><code>wan</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>vm</td>
+          <td></td>
+          <td><code>02:00:00:01:01:01</code></td>
+          <td><code>vm</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>HA/Corosync</td>
+          <td><code>10.0.253.1</code></td>
+          <td><code>02:00:00:FD:01:01</code></td>
+          <td><code>ha</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Ceph</td>
+          <td><code>10.0.254.1</code></td>
+          <td><code>02:00:00:FE:01:01</code></td>
+          <td><code>ceph</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Storage</td>
+          <td><code>10.0.255.1</code></td>
+          <td><code>02:00:00:FF:01:01</code></td>
+          <td><code>store</code></td>
+      </tr>
+      <tr>
+          <td><strong>pve-02</strong></td>
+          <td>WAN</td>
+          <td><code>192.168.122.2</code></td>
+          <td><code>02:00:00:00:02:02</code></td>
+          <td><code>wan</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>vm</td>
+          <td></td>
+          <td><code>02:00:00:01:02:02</code></td>
+          <td><code>vm</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>HA/Corosync</td>
+          <td><code>10.0.253.2</code></td>
+          <td><code>02:00:00:FD:02:02</code></td>
+          <td><code>ha</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Ceph</td>
+          <td><code>10.0.254.2</code></td>
+          <td><code>02:00:00:FE:02:02</code></td>
+          <td><code>ceph</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Storage</td>
+          <td><code>10.0.255.2</code></td>
+          <td><code>02:00:00:FF:02:02</code></td>
+          <td><code>store</code></td>
+      </tr>
+      <tr>
+          <td><strong>pve-03</strong></td>
+          <td>WAN</td>
+          <td><code>192.168.122.3</code></td>
+          <td><code>02:00:00:00:03:03</code></td>
+          <td><code>wan</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>vm</td>
+          <td></td>
+          <td><code>02:00:00:01:03:03</code></td>
+          <td><code>vm</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>HA/Corosync</td>
+          <td><code>10.0.253.3</code></td>
+          <td><code>02:00:00:FD:03:03</code></td>
+          <td><code>ha</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Ceph</td>
+          <td><code>10.0.254.3</code></td>
+          <td><code>02:00:00:FE:03:03</code></td>
+          <td><code>ceph</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Storage</td>
+          <td><code>10.0.255.3</code></td>
+          <td><code>02:00:00:FF:03:03</code></td>
+          <td><code>store</code></td>
+      </tr>
+      <tr>
+          <td><strong>pbs</strong></td>
+          <td>vm</td>
+          <td><code>10.0.1.10</code></td>
+          <td><code>02:00:00:01:00:0A</code></td>
+          <td><code>vm</code></td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Storage</td>
+          <td><code>10.0.255.10</code></td>
+          <td><code>02:00:00:FF:00:0A</code></td>
+          <td><code>store</code></td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="13-storage-design-and-allocation">1.3. Storage Design and Allocation<a hidden class="anchor" aria-hidden="true" href="#13-storage-design-and-allocation">#</a></h3>
+<p>Rather than leaving everything to chance, let&rsquo;s do it very tight and predictable, as you would like in a production environment. These are the specs for each of the VMs which are &ldquo;virtual hosts&rdquo; (the Proxmox nodes and the future storage server):</p>
+<table>
+  <thead>
+      <tr>
+          <th><strong>VM Name</strong></th>
+          <th><strong>Role</strong></th>
+          <th><strong>vCPU</strong></th>
+          <th><strong>RAM</strong></th>
+          <th><strong>Boot Disk</strong></th>
+          <th><strong>Storage Disks</strong></th>
+          <th><strong>Purpose</strong></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>vm-pve-01</strong></td>
+          <td>PVE Node 1</td>
+          <td>4</td>
+          <td>20GB</td>
+          <td>32GB (sda)</td>
+          <td>2x 150GB (sdb, sdc)</td>
+          <td>Proxmox + Ceph OSDs</td>
+      </tr>
+      <tr>
+          <td><strong>vm-pve-02</strong></td>
+          <td>PVE Node 2</td>
+          <td>4</td>
+          <td>20GB</td>
+          <td>32GB (sda)</td>
+          <td>2x 150GB (sdb, sdc)</td>
+          <td>Proxmox + Ceph OSDs</td>
+      </tr>
+      <tr>
+          <td><strong>vm-pve-03</strong></td>
+          <td>PVE Node 3</td>
+          <td>4</td>
+          <td>20GB</td>
+          <td>32GB (sda)</td>
+          <td>2x 150GB (sdb, sdc)</td>
+          <td>Proxmox + Ceph OSDs</td>
+      </tr>
+      <tr>
+          <td><strong>pbs</strong></td>
+          <td>Storage</td>
+          <td>2</td>
+          <td>4GB</td>
+          <td>20GB</td>
+          <td>1x 500GB</td>
+          <td>NFS/Shared Storage</td>
+      </tr>
+  </tbody>
+</table>
+<p>You could probably get away with 16GB RAM for the PVE nodes, however that will require some aggressive tuning of Ceph. Don&rsquo;t expect to be able to test fail over if you go that route. I think that it will also work if the host system has 64GB RAM if you&rsquo;re not going crazy with browsers and apps. Memory prices are a problem these days, but if you have 96GB RAM you&rsquo;re in a better spot. You could still leverage a bunch of physical hardware, but you need a managed switch to have the network right, so there&rsquo;s always a trade-off. This is how our finished storage will look like:</p>
+<p><img alt="Virtual Lab Storage Layout" loading="lazy" src="/posts/vlab_part-2/vlab_storage_part-2.png"></p>
+<h2 id="2-setting-up-the-auto-installer">2. Setting up the Auto-Installer<a hidden class="anchor" aria-hidden="true" href="#2-setting-up-the-auto-installer">#</a></h2>
+<p>We need to install the <code>proxmox-auto-install-assistant</code> program. Proxmox maintains it for Debian, because that&rsquo;s the platform where Proxmox runs. Assuming that you are following along on Arch: we can easily fix this with Distrobox: run a lightweight Debian 13 container and manager it from there. You could get away with a regular docker container or a Debian 13 (or Proxmox) VM too. I&rsquo;m covering the Arch Linux steps:</p>
+<h3 id="21-arch-setting-up-distrobox-and-debian-13">2.1. Arch: Setting up Distrobox and Debian 13<a hidden class="anchor" aria-hidden="true" href="#21-arch-setting-up-distrobox-and-debian-13">#</a></h3>
+<p>First install it with <code>pacman</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo pacman -S distrobox
+</span></span></code></pre></div><p>Next, create a Debian 13 (at this time) container:</p>
+<pre tabindex="0"><code>distrobox create -i debian:latest -n pve-tools
+</code></pre><p>We gave it the name <code>pve-tools</code>. Enter the container, it should take a couple of minutes the first time:</p>
+<pre tabindex="0"><code>distrobox enter pve-tools
+</code></pre><p>Once you&rsquo;re in, your prompt will probably look a bit different from when you were directly on Arch. Make sure that the packages are running on the latest version:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt update <span style="color:#f92672">&amp;&amp;</span> sudo apt dist-upgrade -y
+</span></span></code></pre></div><p>Next, make sure the <code>keyrings</code> directory exists:</p>
+<pre tabindex="0"><code>sudo mkdir -p /etc/apt/keyrings
+</code></pre><p>Then, add the Proxmox GPG key:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo wget https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg -O /etc/apt/keyrings/proxmox-release-bookworm.gpg
+</span></span></code></pre></div><p>Add the Proxmox <code>no-subscription</code> repository:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;deb [signed-by=/etc/apt/keyrings/proxmox-release-bookworm.gpg] http://download.proxmox.com/debian/pve bookworm pve-no-subscription&#34;</span> | sudo tee /etc/apt/sources.list.d/pve.list
+</span></span></code></pre></div><p>Then, set the right permissions to the <code>keyring</code> directory, update again and install the <code>proxmox-auto-install-assistant</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo chmod <span style="color:#ae81ff">644</span> /etc/apt/keyrings/proxmox-release-bookworm.gpg
+</span></span><span style="display:flex;"><span>sudo apt update <span style="color:#f92672">&amp;&amp;</span> sudo apt install -y proxmox-auto-install-assistant
+</span></span></code></pre></div><p>Check that it&rsquo;s installed:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>proxmox-auto-install-assistant --version
+</span></span></code></pre></div><p>For now, open another terminal (or terminal tab) or leave the Distrobox container by typing <code>exit</code>.</p>
+<h3 id="22-setting-up-the-auto-installer-iso">2.2. Setting up the Auto-Installer ISO<a hidden class="anchor" aria-hidden="true" href="#22-setting-up-the-auto-installer-iso">#</a></h3>
+<h4 id="221-create-new-files">2.2.1. Create New Files<a hidden class="anchor" aria-hidden="true" href="#221-create-new-files">#</a></h4>
+<p>We will be exercising how to do this with node <code>pve-01</code>, and then we will replicate the steps to the other nodes later. Inside our project&rsquo;s folder, we will be heading to the folder to deal with files related to the guest systems. From the project&rsquo;s folder, run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>touch guests/pve-01/<span style="color:#f92672">{</span>answer_pve-01.toml,firstboot_pve-01.sh<span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>Run <code>tree -L 2</code> from the project&rsquo;s folder and your folder should be looking something like this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tree -L <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>├── diagrams
+</span></span><span style="display:flex;"><span>├── guests
+</span></span><span style="display:flex;"><span>│   ├── pbs
+</span></span><span style="display:flex;"><span>│   ├── pve-01
+</span></span><span style="display:flex;"><span>│   │   ├── answer_pve-01.toml
+</span></span><span style="display:flex;"><span>│   │   └── firstboot_pve-01.sh
+</span></span><span style="display:flex;"><span>│   ├── pve-02
+</span></span><span style="display:flex;"><span>│   └── pve-03
+</span></span><span style="display:flex;"><span>├── host
+</span></span><span style="display:flex;"><span>│   ├── configs
+</span></span><span style="display:flex;"><span>│   │   ├── ceph-br.xml
+</span></span><span style="display:flex;"><span>│   │   ├── default.xml
+</span></span><span style="display:flex;"><span>│   │   ├── ha-br.xml
+</span></span><span style="display:flex;"><span>│   │   ├── st-br.xml
+</span></span><span style="display:flex;"><span>│   │   └── vm-br.xml
+</span></span><span style="display:flex;"><span>│   └── scripts
+</span></span></code></pre></div><p>The two new files we&rsquo;ve created, and their function are as follows:</p>
+<ul>
+<li><code>answer_pve-01.toml</code>: The program <code>proxmox-auto-install-assistant</code> will use this file to configure the auto-installation of the Proxmox node.</li>
+<li><code>firstboot_pve-01.sh</code>: The program <code>proxmox-auto-install-assistant</code> will insert this script to be executed in the first boot after the installation. We will use it to set a few extra configurations.</li>
+</ul>
+<h4 id="222-working-on-the-answer-file">2.2.2. Working on the Answer File<a hidden class="anchor" aria-hidden="true" href="#222-working-on-the-answer-file">#</a></h4>
+<p>We would like to be using an ssh key-pair to connect to the servers when they are configured. If you don&rsquo;t have one and don&rsquo;t know how to generate one:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ssh-keygen -t ed25519 -C <span style="color:#e6db74">&#34;yourname@machine&#34;</span>
+</span></span></code></pre></div><p>And then <code>cat .ssh/id-ed25519.pub</code>. That&rsquo;s your public key. You will copy it into the <code>answer</code> configuration file.</p>
+<p>You will edit your file with <code>vim guests/pve-01/answer_pve-01.toml</code>. This is my file, adjust yours according to your location, keyboard type and timezone and making sure to copy the SSH key between the double quotes:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">global</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyboard</span> = <span style="color:#e6db74">&#34;en-us&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">country</span> = <span style="color:#e6db74">&#34;ie&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fqdn</span> = <span style="color:#e6db74">&#34;pve-01.lab.local&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mailto</span> = <span style="color:#e6db74">&#34;admin@lab.local&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timezone</span> = <span style="color:#e6db74">&#34;Europe/Dublin&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">root-password</span> = <span style="color:#e6db74">&#34;Secret123!&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">root-ssh-keys</span> = [
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;ssh-ed25519 AAAAC3...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">network</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">source</span> = <span style="color:#e6db74">&#34;from-answer&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cidr</span> = <span style="color:#e6db74">&#34;192.168.122.1/24&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">gateway</span> = <span style="color:#e6db74">&#34;192.168.122.254&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dns</span> = <span style="color:#e6db74">&#34;1.1.1.1&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">network</span>.<span style="color:#a6e22e">filter</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ID_NET_NAME_MAC</span> = <span style="color:#e6db74">&#34;*020000000101&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">network</span>.<span style="color:#a6e22e">interface-name-pinning</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">network</span>.<span style="color:#a6e22e">interface-name-pinning</span>.<span style="color:#a6e22e">mapping</span>]
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;02:00:00:00:01:01&#34;</span> = <span style="color:#e6db74">&#34;wan&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;02:00:00:01:01:01&#34;</span> = <span style="color:#e6db74">&#34;nic_vm&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;02:00:00:fd:01:01&#34;</span> = <span style="color:#e6db74">&#34;ha&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;02:00:00:fe:01:01&#34;</span> = <span style="color:#e6db74">&#34;ceph&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;02:00:00:ff:01:01&#34;</span> = <span style="color:#e6db74">&#34;store&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">disk-setup</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">filesystem</span> = <span style="color:#e6db74">&#34;ext4&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">disk-list</span> = [<span style="color:#e6db74">&#34;sda&#34;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">first-boot</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">source</span> = <span style="color:#e6db74">&#34;from-iso&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ordering</span> = <span style="color:#e6db74">&#34;before-network&#34;</span>
+</span></span></code></pre></div><p>The trailing space might be important if you have issues, be sure to copy it too.</p>
+<h4 id="223-working-on-the-first-boot">2.2.3. Working on the First Boot<a hidden class="anchor" aria-hidden="true" href="#223-working-on-the-first-boot">#</a></h4>
+<p>You will now <code>vim guests/pve-01/firstboot_pve-01.sh</code> and copy the script bellow and save it. I will then explain some things:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 1. Disable enterprise repos, enable no-subscription</span>
+</span></span><span style="display:flex;"><span>rm -f /etc/apt/sources.list.d/pve-enterprise.list
+</span></span><span style="display:flex;"><span>cat <span style="color:#e6db74">&lt;&lt;EOF &gt; /etc/apt/sources.list.d/pve-no-subscription.sources
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Types: deb
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">URIs: http://download.proxmox.com/debian/pve
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Suites: trixie
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Components: pve-no-subscription
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cat <span style="color:#e6db74">&lt;&lt;EOF &gt; /etc/apt/sources.list.d/ceph.sources
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Types: deb
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">URIs: http://download.proxmox.com/debian/ceph-squid
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Suites: trixie
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Components: no-subscription
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2. Hosts entries for cluster</span>
+</span></span><span style="display:flex;"><span>cat <span style="color:#e6db74">&lt;&lt;EOF &gt;&gt; /etc/hosts
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">192.168.122.1 pve-01.lab.local pve-01
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">192.168.122.2 pve-02.lab.local pve-02
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">192.168.122.3 pve-03.lab.local pve-03
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 3. Network config</span>
+</span></span><span style="display:flex;"><span>cat <span style="color:#e6db74">&lt;&lt;EON &gt; /etc/network/interfaces
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">auto lo
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">iface lo inet loopback
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">auto wan
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">iface wan inet static
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">address 192.168.122.1/24
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">gateway 192.168.122.254
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">iface nic_vm inet manual
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">auto vm_br
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">iface vm_br inet manual
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">bridge-ports nic_vm
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">bridge-stp off
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">bridge-fd 0
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">bridge-vlan-aware yes
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">bridge-vids 10,20,30 # 10 = intranet, 20 = dmz, 30 = mgmt
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">auto ha
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">iface ha inet static
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">address 10.0.253.1/24
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">auto ceph
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">iface ceph inet static
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">address 10.0.254.1/24
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">auto store
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">iface store inet static
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">address 10.0.255.1/24
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EON</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>reboot
+</span></span></code></pre></div><p>What we are doing here is simple:</p>
+<ul>
+<li>Disabling the Proxmox <code>enterprise</code> repositories and utilizing the <code>no-subscription</code> repositories.</li>
+<li>Adding the future Proxmox nodes to the <code>/etc/hosts</code> file so that this node knows them by name.</li>
+<li>Doing the final round of configuring this node&rsquo;s network interfaces into their permanent configuration.</li>
+</ul>
+<h2 id="3-auto-installing-proxmox-ve">3. Auto-Installing Proxmox VE<a hidden class="anchor" aria-hidden="true" href="#3-auto-installing-proxmox-ve">#</a></h2>
+<h3 id="31-obtain-the-proxmox-ve-91-iso">3.1. Obtain the Proxmox VE 9.1 ISO<a hidden class="anchor" aria-hidden="true" href="#31-obtain-the-proxmox-ve-91-iso">#</a></h3>
+<p>All that we did so far was in preparation for this moment: we will now create the ISO file for the auto-install. As a requirement, you must download the Proxmox VE 9.1 ISO from the Proxmox website. Let&rsquo;s use <code>wget</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo pacman -S wget
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>wget --show-progress -O /var/lib/libvirt/images/proxmox-ve_9.1-1.iso https://enterprise.proxmox.com/iso/proxmox-ve_9.1-1.iso
+</span></span></code></pre></div><p>This should work if you followed section <strong>2.1</strong> from Part 1 of this tutorial series. If not, you need to run <code>wget</code> as <code>sudo</code>, or add the following ACLs to the <code>/var/lib/libvirt</code> directory. This is preferable as it will facilitate other steps in the future:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Apply rwx permissions for your user to all existing files/dirs recursively</span>
+</span></span><span style="display:flex;"><span>sudo setfacl -R -m u:<span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span>:rwx,m::rwx /var/lib/libvirt/
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set default ACL - new files/dirs created inside inherit these permission</span>
+</span></span><span style="display:flex;"><span>sudo setfacl -R -d -m u:<span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span>:rwx,m::rwx /var/lib/libvirt/
+</span></span></code></pre></div><p>Check that you have it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -l /var/lib/libvirt/images/proxmox-ve_9.1-1.iso
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Expected output</span>
+</span></span><span style="display:flex;"><span>-rw-r--r-- <span style="color:#ae81ff">1</span> tlutkus tlutkus <span style="color:#ae81ff">17497854</span> Jan <span style="color:#ae81ff">25</span> 15:36 /var/lib/libvirt/images/proxmox-ve_9.1-1.iso
+</span></span></code></pre></div><h3 id="32-create-the-auto-install-iso-for-pve-01">3.2. Create the Auto-Install ISO for <code>pve-01</code><a hidden class="anchor" aria-hidden="true" href="#32-create-the-auto-install-iso-for-pve-01">#</a></h3>
+<p>Head back into your Distrobox instance <code>distrobox enter pve-tools</code>. From our project&rsquo;s directory:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ISO_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/proxmox-ve_9.1-1.iso&#34;</span>
+</span></span><span style="display:flex;"><span>ANSWER_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;guests/pve-01/answer_pve-01.toml&#34;</span>
+</span></span><span style="display:flex;"><span>FIRST_BOOT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;guests/pve-01/firstboot_pve-01.sh&#34;</span>
+</span></span><span style="display:flex;"><span>OUTPUT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/pve-01_automated.iso&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proxmox-auto-install-assistant prepare-iso <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ISO_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--fetch-from iso <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--answer-file <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ANSWER_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--on-first-boot <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FIRST_BOOT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--output <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p>Check that this step ran successfully with <code>ls -l /var/lib/libvirt/images/pve-01_automated.iso</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ ls -l /var/lib/libvirt/images/pve-01_automated.iso
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Expected Output</span>
+</span></span><span style="display:flex;"><span>-rw-r--r--+ <span style="color:#ae81ff">1</span> libvirt-qemu libvirt-qemu <span style="color:#ae81ff">1833369600</span> Jan <span style="color:#ae81ff">23</span> 17:13 /var/lib/libvirt/images/pve-01_automated.iso
+</span></span></code></pre></div><p>You could <code>exit</code> Distrobox now, or move to another terminal window/tab.</p>
+<h3 id="33-auto-install-proxmox-on-pve-01">3.3. Auto-Install Proxmox on <code>pve-01</code><a hidden class="anchor" aria-hidden="true" href="#33-auto-install-proxmox-on-pve-01">#</a></h3>
+<p>This is it: we are going to deploy <code>pve-01</code> automatically. for this step, I think that you will want to see the fireworks. It&rsquo;s better if you have a couple of terminal windows/tabs available. From the first one do:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virt-viewer -r -w pve-01
+</span></span></code></pre></div><p>A <code>virt-viewer</code> window will pop up. Move it to a side. Head into your second terminal window and type/paste the following command. Watch the Proxmox installation unfold on the <code>virt-viewer</code> window we just created. It will run all the way to the end and power off the VM:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Engineered Specs</span>
+</span></span><span style="display:flex;"><span>VM_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;pve-01&#34;</span>
+</span></span><span style="display:flex;"><span>VM_RAM<span style="color:#f92672">=</span><span style="color:#ae81ff">20480</span> <span style="color:#75715e"># 20GiB - adjust to your case</span>
+</span></span><span style="display:flex;"><span>VM_CPU<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>ISO_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/pve-01_automated.iso&#34;</span>
+</span></span><span style="display:flex;"><span>IMG_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Deployment</span>
+</span></span><span style="display:flex;"><span>virt-install <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--name <span style="color:#e6db74">&#34;</span>$VM_NAME<span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--ram <span style="color:#e6db74">&#34;</span>$VM_RAM<span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--vcpus <span style="color:#e6db74">&#34;</span>$VM_CPU<span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--cpu host-passthrough <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--os-variant debian13 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--graphics vnc,listen<span style="color:#f92672">=</span>0.0.0.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--noautoconsole <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--boot cdrom,hd <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--cdrom <span style="color:#e6db74">&#34;</span>$ISO_PATH<span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--controller type<span style="color:#f92672">=</span>scsi,model<span style="color:#f92672">=</span>virtio-scsi <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--disk path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$IMG_DIR<span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>VM_NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">_root.qcow2&#34;</span>,size<span style="color:#f92672">=</span>32,format<span style="color:#f92672">=</span>qcow2,bus<span style="color:#f92672">=</span>scsi,cache<span style="color:#f92672">=</span>none,io<span style="color:#f92672">=</span>native <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--disk path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$IMG_DIR<span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>VM_NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">_osd1.qcow2&#34;</span>,size<span style="color:#f92672">=</span>150,format<span style="color:#f92672">=</span>qcow2,bus<span style="color:#f92672">=</span>scsi,cache<span style="color:#f92672">=</span>none,io<span style="color:#f92672">=</span>native <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--disk path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$IMG_DIR<span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>VM_NAME<span style="color:#e6db74">}</span><span style="color:#e6db74">_osd2.qcow2&#34;</span>,size<span style="color:#f92672">=</span>150,format<span style="color:#f92672">=</span>qcow2,bus<span style="color:#f92672">=</span>scsi,cache<span style="color:#f92672">=</span>none,io<span style="color:#f92672">=</span>native <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--network bridge<span style="color:#f92672">=</span>virbr0,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span>02:00:00:00:01:01 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--network bridge<span style="color:#f92672">=</span>vm-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span>02:00:00:01:01:01 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--network bridge<span style="color:#f92672">=</span>ha-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span>02:00:00:FD:01:01 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--network bridge<span style="color:#f92672">=</span>ceph-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span>02:00:00:FE:01:01 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--network bridge<span style="color:#f92672">=</span>st-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span>02:00:00:FF:01:01
+</span></span></code></pre></div><p>Your <code>virt-viewer</code> screen should give you this, wait for it to run automatically:</p>
+<p><img alt="Proxmox AutoInstall Running" loading="lazy" src="/posts/vlab_part-2/pve_install_01.png"></p>
+<p>Once Proxmox installed and powered off, we need to do the first boot, so that the <code>firstboot_pve-01.sh</code> script will run automatically. Run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh start pve-01
+</span></span></code></pre></div><p>It will cycle one or two times through the first boot. Wait for up to a minute (depending on your hardware specs) for it to give you a terminal:</p>
+<p><img alt="Proxmox First Boot Complete" loading="lazy" src="/posts/vlab_part-2/pve_install_02.png"></p>
+<p>At his point you know your <code>pve-01</code> node has deployed successfully. Let&rsquo;s make sure it&rsquo;s really configured as we need it to, make sure that the <code>firstboot_pve-01.sh</code> script ran properly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ssh -i .ssh/id-ed25519 root@192.168.122.1
+</span></span></code></pre></div><p>Be mindful to specify the correct ssh key for your case. Once you&rsquo;re in, run <code>ip a</code> and you should get a similar output:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>root@pve-01:~$ ip a | grep -E <span style="color:#e6db74">&#39;(wan|nic_vm|ha|ceph|store|vm_br)&#39;</span> --color<span style="color:#f92672">=</span>auto
+</span></span><span style="display:flex;"><span>2: wan: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc fq_codel state UP group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 192.168.122.1/24 scope global wan
+</span></span><span style="display:flex;"><span>3: nic_vm: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc fq_codel master vm_br state UP group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>4: ha: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc fq_codel state UP group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 10.0.253.1/24 scope global ha
+</span></span><span style="display:flex;"><span>5: ceph: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc fq_codel state UP group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 10.0.254.1/24 scope global ceph
+</span></span><span style="display:flex;"><span>6: store: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc fq_codel state UP group default qlen <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>    inet 10.0.255.1/24 scope global store
+</span></span><span style="display:flex;"><span>7: vm_br: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc noqueue state UP group default qlen <span style="color:#ae81ff">1000</span>
+</span></span></code></pre></div><p>If you&rsquo;re looking at the same output: congratulations, you just finished your auto-install of <code>pve-01</code>. You can <code>exit</code> the <code>pve-01</code> shell. Additionally, <code>virsh destroy pve-01</code> to power it off and clean up after yourself.</p>
+<h2 id="4-final-words-for-part-2">4. Final Words for Part 2<a hidden class="anchor" aria-hidden="true" href="#4-final-words-for-part-2">#</a></h2>
+<p>We just did all the steps to get the first node <code>pve-01</code> deployed. As a homework, before you head into Part 3 next week, you go go about reproducing what we just did for <code>pve-01</code> for <code>pve-02</code> and <code>pve-03</code>, being mindful to replace all the names and addresses in the files and commands we used. This would be a good exercise. That&rsquo;s not what we are doing next week. Instead, we will be using shell scripts to automate everything we&rsquo;ve done so far, and make it idempotent and repeatable. As it was with Part 1, I might work on improvements and make further changes to the diagram. Thank you for stick with me until the end. Stay tuned for more!</p>
+<p>God bless you.</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/proxmox/">Proxmox</a></li>
+      <li><a href="http://localhost:1313/tags/homelab/">Homelab</a></li>
+      <li><a href="http://localhost:1313/tags/virsh/">Virsh</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/vlab_part-1/">
+    <span class="title">Next »</span>
+    <br>
+    <span>Virtual Proxmox Lab - Setting up your Environment (Part 1 of 5)</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">Thomas Lutkus</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

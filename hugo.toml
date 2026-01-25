@@ -38,3 +38,8 @@ timeZone = "Europe/Dublin"
     name = "About"
     url = "/about/"
     weight = 5
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

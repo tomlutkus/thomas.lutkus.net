@@ -7,8 +7,6 @@ series = ["virtualization"]
 categories = ["tutorials"]
 +++
 
-# Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5)
-
 ## 1. Introduction
 
 Now, we will be deploying an enterprise-grade lab. Therefore we need to think about how we do things in production: we can't be clicking around and hoping for the best. This quickly compounds. We also need things to scale, to be idempotent (magic word for "always works the same") and self-healing. As I see this series going right now, we will be iterating the design of our lab a little bit as we go, since there is always room for improving and learning. That being said, I have done some changes to Part 1 to keep things consistent with this new post, add some stuff and fix minor errors. You should check it out.

@@ -13,8 +13,7 @@
       <link>http://localhost:1313/posts/vlab_part-2/</link>
       <pubDate>Sun, 25 Jan 2026 19:10:00 +0000</pubDate>
       <guid>http://localhost:1313/posts/vlab_part-2/</guid>
-      <description>&lt;h1 id=&#34;virtual-proxmox-lab---auto-install-proxmox-part-2-of-5&#34;&gt;Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5)&lt;/h1&gt;
-&lt;h2 id=&#34;1-introduction&#34;&gt;1. Introduction&lt;/h2&gt;
+      <description>&lt;h2 id=&#34;1-introduction&#34;&gt;1. Introduction&lt;/h2&gt;
 &lt;p&gt;Now, we will be deploying an enterprise-grade lab. Therefore we need to think about how we do things in production: we can&amp;rsquo;t be clicking around and hoping for the best. This quickly compounds. We also need things to scale, to be idempotent (magic word for &amp;ldquo;always works the same&amp;rdquo;) and self-healing. As I see this series going right now, we will be iterating the design of our lab a little bit as we go, since there is always room for improving and learning. That being said, I have done some changes to Part 1 to keep things consistent with this new post, add some stuff and fix minor errors. You should check it out.&lt;/p&gt;</description>
     </item>
     <item>
@@ -22,8 +21,7 @@
       <link>http://localhost:1313/posts/vlab_part-1/</link>
       <pubDate>Sun, 18 Jan 2026 19:17:00 +0000</pubDate>
       <guid>http://localhost:1313/posts/vlab_part-1/</guid>
-      <description>&lt;h1 id=&#34;virtual-proxmox-lab---setting-up-your-environment-part-1-of-5&#34;&gt;Virtual Proxmox Lab - Setting up your Environment (Part 1 of 5)&lt;/h1&gt;
-&lt;h2 id=&#34;1-introduction&#34;&gt;1. Introduction&lt;/h2&gt;
+      <description>&lt;h2 id=&#34;1-introduction&#34;&gt;1. Introduction&lt;/h2&gt;
 &lt;h3 id=&#34;11-lab-design&#34;&gt;1.1. Lab Design&lt;/h3&gt;
 &lt;p&gt;I have some cool experience deploying and configuring a Proxmox cluster with High Availability and fully redundant Ceph in production. I thought it&amp;rsquo;d be cool to share my insights. Since I have been meaning to redeploy my lab on my laptop to test some things, I thought this is a good time. To start, this post will be about setting up the lab environment and install one Proxmox instance. I&amp;rsquo;m going to write a few other tutorials as I go. You are free to use the content here as you see fit. I would appreciate being credited, but that&amp;rsquo;s not a requirement.&lt;/p&gt;</description>
     </item>

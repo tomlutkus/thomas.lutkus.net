@@ -7,8 +7,6 @@ series = ["virtualization"]
 categories = ["tutorials"]
 +++
 
-# Virtual Proxmox Lab - Setting up your Environment (Part 1 of 5)
-
 ## 1. Introduction
 
 ### 1.1. Lab Design

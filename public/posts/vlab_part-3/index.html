@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Virtual Proxmox Lab (Part 3) - Scripting the Lab | Thomas Lutkus</title>
+<meta name="keywords" content="proxmox, homelab, virsh">
+<meta name="description" content="1. Introduction
+1.1 Foreword
+Over the last 2 weeks since I have started to write this series, I was asked a few times &ldquo;what about&rdquo; Ansible, Terraform and other automation tools. The easy answer is: they are besides the point of what I&rsquo;m trying to achieve right now. When I learned to build a VMware cluster, I learned to build the virtualization platform first, and to understand the network topology and the whys. I think that good teaching builds toward something. This tutorial series is a lot about learning a builder&rsquo;s mindset and learning how to put some things together. It&rsquo;s not about a quick recipe for a ready-to-go thing. If I was aiming at just that, I could easily go to a &ldquo;here&rsquo;s the GitHub repo, here are the requirements and some basic instructions and off you go&rdquo;. Or even &ldquo;here&rsquo;s the repo, go to your chatbot and figure it out&rdquo;. Instead, I want the reader to see the struggles and feel the needs for certain tools. I&rsquo;m also adding a lot of personal touch, like the way I&rsquo;m doing the ~/libvirt directory. I like the idea of taking the chance to teach a new trick or two, or go into territory that most DevOps Engineers or SREs don&rsquo;t go to. If you think about it, in this series I&rsquo;m teaching how to build a virtualization cluster. I&rsquo;m also excited to iterate on my network diagram designs, on the cluster design itself and for people to maybe see it and feel stoked to get into &ldquo;learning the craft&rdquo; through repetition and persistence.">
+<meta name="author" content="Thomas Lutkus">
+<link rel="canonical" href="http://localhost:1313/posts/vlab_part-3/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.343cc480b9ffc8f04ccbe5e968ad674880cab773ec19905e93033065c1e7a804.css" integrity="sha256-NDzEgLn/yPBMy&#43;XpaK1nSIDKt3PsGZBekwMwZcHnqAQ=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/vlab_part-3/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            .list::-webkit-scrollbar-thumb {
+                border-color: var(--code-bg);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="Thomas Lutkus (Alt + H)">Thomas Lutkus</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/series/" title="Series">
+                    <span>Series</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/categories/" title="Categories">
+                    <span>Categories</span>
+                </a>
+            </li>
+            <li>
+                <a href="http://localhost:1313/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Virtual Proxmox Lab (Part 3) - Scripting the Lab
+    </h1>
+    <div class="post-meta"><span title='2026-02-01 17:20:00 +0000 UTC'>February 1, 2026</span>&nbsp;·&nbsp;<span>22 min</span>&nbsp;·&nbsp;<span>Thomas Lutkus</span>
+
+</div>
+  </header> 
+  <div class="post-content"><h2 id="1-introduction">1. Introduction<a hidden class="anchor" aria-hidden="true" href="#1-introduction">#</a></h2>
+<h3 id="11-foreword">1.1 Foreword<a hidden class="anchor" aria-hidden="true" href="#11-foreword">#</a></h3>
+<p>Over the last 2 weeks since I have started to write this series, I was asked a few times &ldquo;what about&rdquo; Ansible, Terraform and other automation tools. The easy answer is: they are besides the point of what I&rsquo;m trying to achieve right now. When I learned to build a VMware cluster, I learned to build the virtualization platform first, and to understand the network topology and the whys. I think that good teaching builds toward something. This tutorial series is a lot about learning a builder&rsquo;s mindset and learning how to put some things together. It&rsquo;s not about a quick recipe for a ready-to-go thing. If I was aiming at just that, I could easily go to a &ldquo;here&rsquo;s the GitHub repo, here are the requirements and some basic instructions and off you go&rdquo;. Or even &ldquo;here&rsquo;s the repo, go to your chatbot and figure it out&rdquo;. Instead, I want the reader to see the struggles and feel the needs for certain tools. I&rsquo;m also adding a lot of personal touch, like the way I&rsquo;m doing the <code>~/libvirt</code> directory. I like the idea of taking the chance to teach a new trick or two, or go into territory that most DevOps Engineers or SREs don&rsquo;t go to. If you think about it, in this series I&rsquo;m teaching how to build a virtualization cluster. I&rsquo;m also excited to iterate on my network diagram designs, on the cluster design itself and for people to maybe see it and feel stoked to get into &ldquo;learning the craft&rdquo; through repetition and persistence.</p>
+<h3 id="12-what-we-are-building">1.2 What We Are Building<a hidden class="anchor" aria-hidden="true" href="#12-what-we-are-building">#</a></h3>
+<p>That all being said, today we will be doing a little bit of automation. I will be teaching you how to write a couple of shell scripts to just put together and dismantle the whole virtual lab very easily, because this is the playground where we will be doing other interesting stuff in the future. I hope that this is not going in the direction of feature creep: when we are done with this series (and it looks like it will be more than 5 parts by now) we will have, in addition to the 3 virtual Proxmox nodes:</p>
+<ul>
+<li>A PBS VM on the same layer as the 3 PVE nodes.</li>
+<li>A PDM VM nested under the 3 PVE nodes.</li>
+<li>A Prometheus/Grafana dashboard monitoring the cluster.</li>
+<li>A Wazzuh VM doing the SIEM.</li>
+</ul>
+<p><img alt="Virtual Lab Part 3 - Network" loading="lazy" src="/posts/vlab_part-3/vlab_part-3_network.png"></p>
+<p>All of these things, before they things which can be automated, are things which can be designed, installed, perfected. Personally, I don&rsquo;t learn really well if I&rsquo;m just copying ready-to-go recipes. I learn well by following along thoughtfully. If you enjoy that too, then we will have fun together. If not, maybe you&rsquo;re looking at the wrong place, the internet is packed full of &ldquo;ready-to-go&rdquo; and AI can just as easily give you that.</p>
+<h3 id="13-back-to-the-pve-nodes-specs">1.3 Back to the PVE Node&rsquo;s Specs<a hidden class="anchor" aria-hidden="true" href="#13-back-to-the-pve-nodes-specs">#</a></h3>
+<p>In Part 2 I provided the following table about the specs for the PVE nodes:</p>
+<table>
+  <thead>
+      <tr>
+          <th><strong>VM Name</strong></th>
+          <th><strong>Role</strong></th>
+          <th><strong>vCPU</strong></th>
+          <th><strong>RAM</strong></th>
+          <th><strong>Boot Disk</strong></th>
+          <th><strong>Storage Disks</strong></th>
+          <th><strong>Purpose</strong></th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>pve-01</strong></td>
+          <td>PVE Node 1</td>
+          <td>4</td>
+          <td>20GB</td>
+          <td>32GB (sda)</td>
+          <td>2x 150GB (sdb, sdc)</td>
+          <td>Proxmox + Ceph OSDs</td>
+      </tr>
+      <tr>
+          <td><strong>pve-02</strong></td>
+          <td>PVE Node 2</td>
+          <td>4</td>
+          <td>20GB</td>
+          <td>32GB (sda)</td>
+          <td>2x 150GB (sdb, sdc)</td>
+          <td>Proxmox + Ceph OSDs</td>
+      </tr>
+      <tr>
+          <td><strong>pve-03</strong></td>
+          <td>PVE Node 3</td>
+          <td>4</td>
+          <td>20GB</td>
+          <td>32GB (sda)</td>
+          <td>2x 150GB (sdb, sdc)</td>
+          <td>Proxmox + Ceph OSDs</td>
+      </tr>
+  </tbody>
+</table>
+<p>And we went ahead and deployed <code>pve-01</code> following these specifications. The vCPU should be of type <em>host-passthrough</em> and the disk controllers should be <em>SCSI (virtio)</em>, which is not the same as just virtio. There are enough disks to build a fully redundant Ceph pool, allowing us to have a full node failure or single disk failures, this is the kind of resilience which is reasonable for a cluster of this size.</p>
+<p><img alt="Virtual Lab Part 3 - Storage" loading="lazy" src="/posts/vlab_part-3/vlab_part-3_storage.png"></p>
+<p>At the end of this part you will have a couple of scripts which will have the whole playground set up from scratch, identical and repeatable:</p>
+<ul>
+<li><code>create_iso.sh</code> with this we will simplify the ISO creation process.</li>
+<li><code>deploy_lab.sh</code> with this we will deploy the entire lab with the networks and the 3 nodes fully installed and network-configured.</li>
+<li><code>destroy_lab.sh</code> with this we will destroy the whole lab: the 3 nodes, their storage and the networks, so that your host machine is clean.</li>
+</ul>
+<p>We will also write a handful of functions to facilitate the whole process. This will be the foundation for what comes next with building a cluster and adding PBS and PDM and will give us the chance to completely wreck things and retry them for as many times as we need.</p>
+<h2 id="2-writing-the-create_isosh-script">2. Writing the <code>create_iso.sh</code> script<a hidden class="anchor" aria-hidden="true" href="#2-writing-the-create_isosh-script">#</a></h2>
+<p>Back in Part 2 we already have the proto-script, which is our starting point:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ISO_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/proxmox-ve_9.1-1.iso&#34;</span>
+</span></span><span style="display:flex;"><span>ANSWER_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;guests/pve-01/answer_pve-01.toml&#34;</span>
+</span></span><span style="display:flex;"><span>FIRST_BOOT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;guests/pve-01/firstboot_pve-01.sh&#34;</span>
+</span></span><span style="display:flex;"><span>OUTPUT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/pve-01_automated.iso&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proxmox-auto-install-assistant prepare-iso <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ISO_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--fetch-from iso <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--answer-file <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ANSWER_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--on-first-boot <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FIRST_BOOT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>--output <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p>You will be writing <code>guests/create_iso.sh</code>.</p>
+<h3 id="21-from-commands-to-script">2.1 From Commands to Script<a hidden class="anchor" aria-hidden="true" href="#21-from-commands-to-script">#</a></h3>
+<p>Those four lines that we ran work, but they are not robust. If you run them from the wrong directory, forget which node you&rsquo;re working with, or try to run them in a system where the <code>proxmox-auto-install-assistant</code> tool is not installed, it won&rsquo;t work and you&rsquo;ll be left guessing why. Besides that, it will require a bunch of copy and paste and editing the variables (or the command itself) every time you want to run it. We will be making this task easier and repeatable by adding:</p>
+<ol>
+<li>A proper header with usage documentation.</li>
+<li>Strict mode to catch errors early.</li>
+<li>Input validation for the node argument.</li>
+<li>Environment checks for OS and dependencies.</li>
+<li>Clear error messages that tell you what went wrong and how to fix it.</li>
+</ol>
+<h3 id="22-the-header-and-strict-mode">2.2 The Header and Strict Mode<a hidden class="anchor" aria-hidden="true" href="#22-the-header-and-strict-mode">#</a></h3>
+<p>The proper shebang is <code>#!/usr/bin/env bash</code> which ensures that the script runs with bash regardless of where it&rsquo;s installed on the system.</p>
+<p>The <code>set</code> line enables bash&rsquo;s strict mode:</p>
+<ul>
+<li><code>-e</code> exits immediately if any command returns a non-zero status.</li>
+<li><code>-u</code> treats unset variables as an error. If you typo a variable name, the script stops.</li>
+<li><code>-o pipefail</code> makes sure that a pipeline <code>|</code> will return the exit status of the last command that failed, not just the final command.</li>
+</ul>
+<h3 id="23-variables-and-arguments">2.3 Variables and Arguments<a hidden class="anchor" aria-hidden="true" href="#23-variables-and-arguments">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>ISO_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/proxmox-ve_9.1-1.iso&#34;</span>
+</span></span><span style="display:flex;"><span>ANSWER_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">/answer_</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">.toml&#34;</span>
+</span></span><span style="display:flex;"><span>FIRST_BOOT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">/firstboot_</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">.sh&#34;</span>
+</span></span><span style="display:flex;"><span>OUTPUT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">_automated.iso&#34;</span>
+</span></span></code></pre></div><p>We&rsquo;re pulling the node name from the first positional argument <code>${1}</code>. The <code>${1:-}</code> syntax provides an empty default if no argument is given, which prevents the <code>-u</code> flag from killing the script before we can show a helpful message.</p>
+<p>We are writing the paths relative to <code>/var/lib/libvirt</code> as the default installation of <em>libvirt</em> stipulates. You could use here <code>${HOME}/libvirt</code> instead, if you&rsquo;re following along the bind mounts step laid out in Part 1. I&rsquo;m assuming that you will run the script as root or have dealt with the directory permissions like I did.</p>
+<p>Let&rsquo;s remember our directory structure from Part 1:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tree -L <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>├── diagrams
+</span></span><span style="display:flex;"><span>├── guests
+</span></span><span style="display:flex;"><span>│   ├── pbs
+</span></span><span style="display:flex;"><span>│   ├── pve-01
+</span></span><span style="display:flex;"><span>│   ├── pve-02
+</span></span><span style="display:flex;"><span>│   └── pve-03
+</span></span><span style="display:flex;"><span>├── host
+</span></span><span style="display:flex;"><span>│   ├── configs
+</span></span><span style="display:flex;"><span>│   │   ├── ceph-br.xml
+</span></span><span style="display:flex;"><span>│   │   ├── default.xml
+</span></span><span style="display:flex;"><span>│   │   ├── ha-br.xml
+</span></span><span style="display:flex;"><span>│   │   ├── st-br.xml
+</span></span><span style="display:flex;"><span>│   │   └── vm-br.xml
+</span></span><span style="display:flex;"><span>│   └── scripts
+</span></span></code></pre></div><p>Now, if you remember part 2, we wrote file files <code>answer_pve-01.toml</code> and <code>firstboot_pve-01.sh</code> under <code>guests/pve-01</code>. We will have each virtual PVE node in their own folder and the script will look for those files according to the node&rsquo;s name using <code>${ANSWER_FILE}</code> and <code>${FIRST_BOOT}</code>.</p>
+<h3 id="24-input-validation">2.4 Input Validation<a hidden class="anchor" aria-hidden="true" href="#24-input-validation">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> -z <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Usage: </span><span style="color:#e6db74">${</span>0<span style="color:#e6db74">}</span><span style="color:#e6db74"> [pve-NN]&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Missing a pve node as argument.&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div><p>Before the script starts doing anything meaningful, we must check that the user actually provided a node name with the <code>-z</code> test verifying that the string is not empty.</p>
+<p>Things to take note here:</p>
+<ul>
+<li>Redirect error messages to STDERR with <code>&amp;gt;&amp;amp;2</code> rather than STDOUT. It&rsquo;s helpful when someone is piping the outputs and don&rsquo;t want error messages and regular output mixed.</li>
+<li>Usage message showing how to invoke the script correctly is a stable best-practice.</li>
+<li>Exit with status 1 indicating failure, can be called with <code>${?}</code>.</li>
+</ul>
+<h3 id="25-environment-checks">2.5 Environment Checks<a hidden class="anchor" aria-hidden="true" href="#25-environment-checks">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ! grep -qi <span style="color:#e6db74">&#39;trixie&#39;</span> /etc/os-release
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;ERROR: Requires Debian 13 (Trixie).&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ! dpkg-query -W proxmox-auto-install-assistant &amp;&gt;/dev/null
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;ERROR: Missing proxmox-auto-install-assistant package.&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Please refer to https://pve.proxmox.com/wiki/Automated_Installation for more information.&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span></code></pre></div><p>The <code>proxmox-auto-install-assistant</code> only exists in Promox&rsquo;s repos, which are only available on Debian (the base distro where Proxmox runs). For the version which we are working with right now, Debian 13 (Trixie) is required. If you&rsquo;re following along on Arch, we will manage this by running Debian 13 inside a Distrobox container. Alternatively, you could be doing this on a computer running Debian 13 or Proxmox. I suspect it&rsquo;s not far-fetched that it would also work on Ubuntu.</p>
+<p>The first check grep <code>/etc/os-release</code> for &ldquo;trixie&rdquo; (case-insensitive). The second check with <code>dpkg-query</code> verifies that the required package is installed. We don&rsquo;t need to see the output, so we redirect both STOUT and STDERR to the black hole with <code>&amp;amp;&amp;gt;/dev/null</code>. We care only for the exit status. We are checking both cases with <code>!</code> meaning that this is a NOT conditional check.</p>
+<h3 id="26-the-main-event">2.6 The Main Event<a hidden class="anchor" aria-hidden="true" href="#26-the-main-event">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>proxmox-auto-install-assistant prepare-iso <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ISO_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --fetch-from iso <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --answer-file <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ANSWER_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --on-first-boot <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FIRST_BOOT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --output <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p>This is the same command that we ran in Part 2, just with the variables substituted. I broke it in different lines with <code>\</code> for readability.</p>
+<h3 id="27-exit-status-handling">2.7 Exit Status Handling<a hidden class="anchor" aria-hidden="true" href="#27-exit-status-handling">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>EXIT_STATUS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>?<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>EXIT_STATUS<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> -ne <span style="color:#ae81ff">0</span> <span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;The script did not execute successfully!&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>EXIT_STATUS<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>exit <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>The special variable <code>${?}</code> holds the exit status of the last command. It&rsquo;s a good idea to capture that immediately to avoid the possibility that any other command executed successfully will overwrite it. We are intently announcing that the script did not run successfully if the main event did not complete. We then end the script with <code>exit 0</code> to make it clear that getting there is the definitive ending.</p>
+<h3 id="28-a-word-on-the-license-header">2.8 A Word on the License Header<a hidden class="anchor" aria-hidden="true" href="#28-a-word-on-the-license-header">#</a></h3>
+<p>You&rsquo;ll notice that I added a GPLv3 license block at the top. I&rsquo;m releasing these scripts under the GPL, because I want you and anyone else to be able to use, modify and share them freely, with the condition that your derivative works remain open. Picking the right license matters, and in this day and age in which corporations will take and not really give back, it matters even more. I&rsquo;m a firm believer in the GPLv3 and also everything the Free Software Foundation stands for, and I encourage you to inform yourself about it. I might write a post on this topic later.</p>
+<p>This is the final result:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Script: create_iso.sh</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Purpose: Simple script to make the process of creating automated PVE installation ISO portable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Copyright (C) 2026 Thomas Lutkus</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This program is free software: you can redistribute it and/or modify</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># it under the terms of the GNU General Public License as published by</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># the Free Software Foundation, either version 3 of the License, or</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># (at your option) any later version.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Compatibility: Debian 13 (must run inside Distrobox on Arch Linux)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Dependencies: proxmox-auto-install-assistant</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># https://pve.proxmox.com/wiki/Automated_Installation#Assistant_Tool</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Requires: root or full access to the libvirt directory</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Usage: ./create_iso.sh [PVE_NODE]</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Author: Thomas Lutkus</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Date: 2026-01-22</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Version: 1.2</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -euo pipefail
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Script constants and variables go here</span>
+</span></span><span style="display:flex;"><span>NODE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span><span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>ISO_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/proxmox-ve_9.1-1.iso&#34;</span>
+</span></span><span style="display:flex;"><span>ANSWER_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">/answer_</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">.toml&#34;</span>
+</span></span><span style="display:flex;"><span>FIRST_BOOT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">/firstboot_</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">.sh&#34;</span>
+</span></span><span style="display:flex;"><span>OUTPUT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">_automated.iso&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Verifications to run the script</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check usage</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> -z <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NODE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Usage: </span><span style="color:#e6db74">${</span>0<span style="color:#e6db74">}</span><span style="color:#e6db74"> [pve-NN]&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Missing a pve node as argument.&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for super user privileges</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># if [[ &#34;${UID}&#34; -ne 0 ]]</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># then</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#     echo &#34;ERROR: Must run as root.&#34; &gt;&amp;2</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#     exit 1</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for Debian 13</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ! grep -qi <span style="color:#e6db74">&#39;trixie&#39;</span> /etc/os-release
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;ERROR: Requires Debian 13 (Trixie).&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for the assistant tool</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ! dpkg-query -W proxmox-auto-install-assistant &amp;&gt;/dev/null
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;ERROR: Missing proxmox-auto-install-assistant package.&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Please refer to https://pve.proxmox.com/wiki/Automated_Installation for more information.&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>proxmox-auto-install-assistant prepare-iso <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ISO_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --fetch-from iso <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --answer-file <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ANSWER_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --on-first-boot <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FIRST_BOOT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>   --output <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>OUTPUT<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>EXIT_STATUS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>?<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>EXIT_STATUS<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> -ne <span style="color:#ae81ff">0</span> <span style="color:#f92672">]]</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;The script did not execute successfully!&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>EXIT_STATUS<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>exit <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><h2 id="3-writing-the-deploy_labsh-script">3. Writing the <code>deploy_lab.sh</code> Script<a hidden class="anchor" aria-hidden="true" href="#3-writing-the-deploy_labsh-script">#</a></h2>
+<h3 id="31-what-it-does">3.1 What it Does<a hidden class="anchor" aria-hidden="true" href="#31-what-it-does">#</a></h3>
+<p>We already went through some concepts I adhere to when shell scripting when writing <code>create_iso.sh</code>, so I will not repeat myself on those. Instead, I will present some new things in this script which I find useful.</p>
+<p>The script will create all the networks, provision the VMs and boot them. It will do some basic checks for the requirements and existence of files, and will also use some cosmetics for the output, so that it looks very professional. I find it encouraging when the script turns out like this one did.</p>
+<h3 id="32-the-flow">3.2 The Flow<a hidden class="anchor" aria-hidden="true" href="#32-the-flow">#</a></h3>
+<p>Nothing like a flowchart to show how it works. Since I&rsquo;m flexing my drawing muscles whenever I can, I thought this script was a nice opportunity to throw a flowchart into our project:</p>
+<p><img alt="Virtual Lab Part 3 - Deploy Flowchart" loading="lazy" src="/posts/vlab_part-3/vlab_part-3_flowchart-deploy.png"></p>
+<p>This is by no means a software development project, but I think that it&rsquo;s a nice visual reference for the code. I won&rsquo;t repeat myself on shell scripting concepts, but I will explain some of the interesting stuff that it does.</p>
+<h3 id="33-whats-new-here">3.3 What&rsquo;s New Here<a hidden class="anchor" aria-hidden="true" href="#33-whats-new-here">#</a></h3>
+<h4 id="status-functions-and-cosmetics">Status Functions and Cosmetics<a hidden class="anchor" aria-hidden="true" href="#status-functions-and-cosmetics">#</a></h4>
+<p>Why bother? Well, when deploying a bunch of VMs and networks a wall of white output text with barely any formatting doesn&rsquo;t do wonders for identifying what is actually happening. Personally, I like neat, informative output. Color-coded output allows us to scan and identify problems instantly.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Status Colors</span>
+</span></span><span style="display:flex;"><span>RED<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;31m&#39;</span>
+</span></span><span style="display:flex;"><span>GREEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;32m&#39;</span>
+</span></span><span style="display:flex;"><span>YELLOW<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;33m&#39;</span>
+</span></span><span style="display:flex;"><span>BLUE<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;34m&#39;</span>
+</span></span><span style="display:flex;"><span>NC<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0m&#39;</span>  <span style="color:#75715e"># No Color</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Status functions</span>
+</span></span><span style="display:flex;"><span>ok<span style="color:#f92672">()</span>   <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>GREEN<span style="color:#e6db74">}</span><span style="color:#e6db74">[OK]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">    </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>info<span style="color:#f92672">()</span> <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>BLUE<span style="color:#e6db74">}</span><span style="color:#e6db74">[INFO]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">  </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>warn<span style="color:#f92672">()</span> <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>YELLOW<span style="color:#e6db74">}</span><span style="color:#e6db74">[WARN]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">  </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>fail<span style="color:#f92672">()</span> <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>RED<span style="color:#e6db74">}</span><span style="color:#e6db74">[FAIL]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">  </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>status<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    local label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$1<span style="color:#e6db74">&#34;</span>      <span style="color:#75715e"># First arg: what we&#39;re reporting on, e.g., &#34;[VM] pve-01&#34;</span>
+</span></span><span style="display:flex;"><span>    local status<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$2<span style="color:#e6db74">&#34;</span>     <span style="color:#75715e"># Second arg: the status text, e.g., &#34;OK&#34; or &#34;FAIL&#34;</span>
+</span></span><span style="display:flex;"><span>    local color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$3<span style="color:#e6db74">&#34;</span>      <span style="color:#75715e"># Third arg: color variable, e.g., &#34;${GREEN}&#34;</span>
+</span></span><span style="display:flex;"><span>    local width<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>        <span style="color:#75715e"># Fixed width for alignment</span>
+</span></span><span style="display:flex;"><span>    local dots<span style="color:#f92672">=</span><span style="color:#66d9ef">$((</span> width <span style="color:#f92672">-</span> <span style="color:#e6db74">${#</span>label<span style="color:#e6db74">}</span> <span style="color:#66d9ef">))</span>  <span style="color:#75715e"># Calculate padding: 50 minus label length</span>
+</span></span><span style="display:flex;"><span>    printf <span style="color:#e6db74">&#34;%s %s %b%s%b\n&#34;</span> <span style="color:#e6db74">&#34;</span>$label<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;.%.0s&#39;</span> <span style="color:#66d9ef">$(</span>seq <span style="color:#ae81ff">1</span> $dots<span style="color:#66d9ef">))</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$color<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$status<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$NC<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>header<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>BLUE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;  Virtual Proxmox Lab Deployment&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>footer<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>GREEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;  Deployment complete. VMs installing.&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;  Run: virsh start pve-{01,02,03} after install completes&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>The <code>header()</code> and <code>footer()</code> functions are pretty self-evident. The other parts are as follows:</p>
+<ul>
+<li>
+<p><strong>Status colors</strong> are just assigning names to the color codes so that they are easier to call.</p>
+</li>
+<li>
+<p><strong>Status functions</strong> are each for different purposes:</p>
+<ul>
+<li><code>info()</code> is before configuring each network.</li>
+<li><code>ok()</code> is when a network was defined/started successfully.</li>
+<li><code>warn()</code> is when a network already existed/running.</li>
+<li><code>fail()</code> is when there are missing config files (validation).</li>
+<li><code>status()</code> is for the steps in the VM provisioning loop.</li>
+</ul>
+</li>
+</ul>
+<p>When you look a the whole script and check it out with the help of flowchart it will be clearer how every piece comes together.</p>
+<h4 id="parsing-the-vm-configuration-file">Parsing the VM Configuration File<a hidden class="anchor" aria-hidden="true" href="#parsing-the-vm-configuration-file">#</a></h4>
+<p>First you will create the file <code>host/configs/vm.conf</code> and will add the following content into it:</p>
+<pre tabindex="0"><code>pve-01,02:00:00:00:01:01,02:00:00:01:01:01,02:00:00:FD:01:01,02:00:00:FE:01:01,02:00:00:FF:01:01
+pve-02,02:00:00:00:01:02,02:00:00:01:01:02,02:00:00:FD:01:02,02:00:00:FE:01:02,02:00:00:FF:01:02
+pve-03,02:00:00:00:01:03,02:00:00:01:01:03,02:00:00:FD:01:03,02:00:00:FE:01:03,02:00:00:FF:01:03
+</code></pre><p>The new line at the end might be necessary, though the script has corrective measure for it. The structure is that of a CSV file with the following variable mapping on the script:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Variable</th>
+          <th>Field</th>
+          <th>Maps to</th>
+          <th>Purpose</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>VM</code></td>
+          <td>1</td>
+          <td><code>--name</code></td>
+          <td>VM name (pve-01, pve-02, pve-03)</td>
+      </tr>
+      <tr>
+          <td><code>MAC_WAN</code></td>
+          <td>2</td>
+          <td><code>bridge=virbr0</code></td>
+          <td>Management/WAN network</td>
+      </tr>
+      <tr>
+          <td><code>MAC_VM</code></td>
+          <td>3</td>
+          <td><code>bridge=vm-br</code></td>
+          <td>VM traffic network</td>
+      </tr>
+      <tr>
+          <td><code>MAC_HA</code></td>
+          <td>4</td>
+          <td><code>bridge=ha-br</code></td>
+          <td>High availability/Corosync</td>
+      </tr>
+      <tr>
+          <td><code>MAC_CEPH</code></td>
+          <td>5</td>
+          <td><code>bridge=ceph-br</code></td>
+          <td>Ceph cluster traffic</td>
+      </tr>
+      <tr>
+          <td><code>MAC_STORE</code></td>
+          <td>6</td>
+          <td><code>bridge=st-br</code></td>
+          <td>Storage network</td>
+      </tr>
+  </tbody>
+</table>
+<p>We made a conscious choice for explicit MACs to have predictable addressing. That makes it easy for the auto installation of Proxmox and the first-boot script to configure the networking properly. We want to achieve proper networking before we would configure anything else in the cluster, that&rsquo;s the desirable state when the installation is finished.</p>
+<p>The core of the VM provisioning loop is right here:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">while</span> IFS<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;,&#39;</span> read -r VM MAC_WAN MAC_VM MAC_HA MAC_CEPH MAC_STORE <span style="color:#f92672">||</span> <span style="color:#f92672">[[</span> -n <span style="color:#e6db74">&#34;</span>$VM<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span> &lt; <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">
+</span></span></span></code></pre></div><p>This is scanning the <code>vm.conf</code> file and getting each variable according to each line/node. The <code>|| [[ -n &quot;$VM&quot; ]]</code> ending catches (or is supposed to) by keeping looping while read succeeds, OR while VM is non-empty. Otherwise, the while loop will end on the last line, before it&rsquo;s processed.</p>
+<h4 id="the-complete-deploy_labsh-script">The Complete <code>deploy_lab.sh</code> Script<a hidden class="anchor" aria-hidden="true" href="#the-complete-deploy_labsh-script">#</a></h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Script: deploy_lab.sh</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Purpose: Script to deploy the entire Virtual Proxmox Lab</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Copyright (C) 2026 Thomas Lutkus</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This program is free software: you can redistribute it and/or modify</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># it under the terms of the GNU General Public License as published by</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># the Free Software Foundation, either version 3 of the License, or</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># (at your option) any later version.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Compatibility: distro-agnostic</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Dependencies: libvirt, virt-install</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Requires: qemu:///system access (root or libvirt group)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Usage: ./deploy_lab.sh [VM_FILE]</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Author: Thomas Lutkus</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Date: 2026-01-23</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Version: 1.0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -euo pipefail
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Script constants and variables go here</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Status Colors</span>
+</span></span><span style="display:flex;"><span>RED<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;31m&#39;</span>
+</span></span><span style="display:flex;"><span>GREEN<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;32m&#39;</span>
+</span></span><span style="display:flex;"><span>YELLOW<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;33m&#39;</span>
+</span></span><span style="display:flex;"><span>BLUE<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0;34m&#39;</span>
+</span></span><span style="display:flex;"><span>NC<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;\033[0m&#39;</span>  <span style="color:#75715e"># No Color</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Status functions</span>
+</span></span><span style="display:flex;"><span>ok<span style="color:#f92672">()</span>   <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>GREEN<span style="color:#e6db74">}</span><span style="color:#e6db74">[OK]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">    </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>info<span style="color:#f92672">()</span> <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>BLUE<span style="color:#e6db74">}</span><span style="color:#e6db74">[INFO]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">  </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>warn<span style="color:#f92672">()</span> <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>YELLOW<span style="color:#e6db74">}</span><span style="color:#e6db74">[WARN]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">  </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>fail<span style="color:#f92672">()</span> <span style="color:#f92672">{</span> echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>RED<span style="color:#e6db74">}</span><span style="color:#e6db74">[FAIL]</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">  </span>$1<span style="color:#e6db74">&#34;</span>; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>status<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    local label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$1<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    local status<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$2<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    local color<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$3<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    local width<span style="color:#f92672">=</span><span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span>    local dots<span style="color:#f92672">=</span><span style="color:#66d9ef">$((</span> width <span style="color:#f92672">-</span> <span style="color:#e6db74">${#</span>label<span style="color:#e6db74">}</span> <span style="color:#66d9ef">))</span>
+</span></span><span style="display:flex;"><span>    printf <span style="color:#e6db74">&#34;%s %s %b%s%b\n&#34;</span> <span style="color:#e6db74">&#34;</span>$label<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>printf <span style="color:#e6db74">&#39;.%.0s&#39;</span> <span style="color:#66d9ef">$(</span>seq <span style="color:#ae81ff">1</span> $dots<span style="color:#66d9ef">))</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$color<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$status<span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;</span>$NC<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>header<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>BLUE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;  Virtual Proxmox Lab Deployment&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>footer<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>GREEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;  Deployment complete. VMs installing.&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;  Run: virsh start pve-{01,02,03} after install completes&#34;</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;═══════════════════════════════════════════════════════════&#34;</span>
+</span></span><span style="display:flex;"><span>    echo -e <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NC<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Functional variables</span>
+</span></span><span style="display:flex;"><span>CONF_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;../configs&#34;</span>
+</span></span><span style="display:flex;"><span>VM_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span>$CONF_DIR/vm.conf<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>declare -A NETWORKS
+</span></span><span style="display:flex;"><span>NETWORKS<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[</span>default<span style="color:#f92672">]=</span><span style="color:#e6db74">&#34;default.xml&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[</span>ceph-br<span style="color:#f92672">]=</span><span style="color:#e6db74">&#34;ceph-br.xml&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[</span>ha-br<span style="color:#f92672">]=</span><span style="color:#e6db74">&#34;ha-br.xml&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[</span>st-br<span style="color:#f92672">]=</span><span style="color:#e6db74">&#34;st-br.xml&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[</span>vm-br<span style="color:#f92672">]=</span><span style="color:#e6db74">&#34;vm-br.xml&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>header
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Validation checks</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for the VM_FILE</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[[</span> -f <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span> <span style="color:#f92672">||</span> <span style="color:#f92672">{</span> fail <span style="color:#e6db74">&#34;Missing VM file: </span><span style="color:#e6db74">${</span>VM_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> &gt;&amp;2; exit 1; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for the network configuration XML files</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> NET in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>!NETWORKS[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>CONF_DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>NETWORKS[$NET]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[[</span> -f <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span> <span style="color:#f92672">||</span> <span style="color:#f92672">{</span> fail <span style="color:#e6db74">&#34;Missing network file: </span><span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> &gt;&amp;2; exit 1; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Define the networks </span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> NET in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>!NETWORKS[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    info <span style="color:#e6db74">&#34;Configuring: </span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>CONF_DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>NETWORKS[$NET]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Define the Network</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> virsh net-define <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> 2&gt;/dev/null; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        ok <span style="color:#e6db74">&#34;Network </span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74"> defined&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        warn <span style="color:#e6db74">&#34;Network </span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74"> was already defined&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Start the network</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> virsh net-start <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> 2&gt;/dev/null; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        ok <span style="color:#e6db74">&#34;Network </span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74"> started&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        warn <span style="color:#e6db74">&#34;Network </span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74"> already running&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Autostart the network</span>
+</span></span><span style="display:flex;"><span>    virsh net-autostart <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> 2&gt;/dev/null <span style="color:#f92672">||</span> true
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set the VMs up with the attributes from the VM_FILE</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">while</span> IFS<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;,&#39;</span> read -r VM MAC_WAN MAC_VM MAC_HA MAC_CEPH MAC_STORE <span style="color:#f92672">||</span> <span style="color:#f92672">[[</span> -n <span style="color:#e6db74">&#34;</span>$VM<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span>; <span style="color:#66d9ef">do</span>    
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Deploying: </span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># VM Configuration Attributes</span>
+</span></span><span style="display:flex;"><span>    VM_RAM<span style="color:#f92672">=</span><span style="color:#ae81ff">20480</span> <span style="color:#75715e"># 20GiB</span>
+</span></span><span style="display:flex;"><span>    VM_CPU<span style="color:#f92672">=</span><span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>    ISO_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images/</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">_automated.iso&#34;</span>
+</span></span><span style="display:flex;"><span>    IMG_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images&#34;</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Check for the ISO file</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">[[</span> -f <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ISO_PATH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span> <span style="color:#f92672">||</span> <span style="color:#f92672">{</span> echo <span style="color:#e6db74">&#34;Missing ISO: </span><span style="color:#e6db74">${</span>ISO_PATH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> &gt;&amp;2; exit 1; <span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Deploy the VM</span>
+</span></span><span style="display:flex;"><span>    status <span style="color:#e6db74">&#34;[VM]    </span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;DEPLOYING&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>YELLOW<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> virt-install <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --name <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --ram <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM_RAM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --vcpus <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM_CPU<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --cpu host-passthrough <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --os-variant debian13 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --graphics vnc,listen<span style="color:#f92672">=</span>0.0.0.0 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --noautoconsole <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --boot cdrom,hd <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --cdrom <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>ISO_PATH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --controller type<span style="color:#f92672">=</span>scsi,model<span style="color:#f92672">=</span>virtio-scsi <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --disk path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>IMG_DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">_root.qcow2&#34;</span>,size<span style="color:#f92672">=</span>32,format<span style="color:#f92672">=</span>qcow2,bus<span style="color:#f92672">=</span>scsi,cache<span style="color:#f92672">=</span>none,io<span style="color:#f92672">=</span>native <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --disk path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>IMG_DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">_osd1.qcow2&#34;</span>,size<span style="color:#f92672">=</span>150,format<span style="color:#f92672">=</span>qcow2,bus<span style="color:#f92672">=</span>scsi,cache<span style="color:#f92672">=</span>none,io<span style="color:#f92672">=</span>native <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --disk path<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>IMG_DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">_osd2.qcow2&#34;</span>,size<span style="color:#f92672">=</span>150,format<span style="color:#f92672">=</span>qcow2,bus<span style="color:#f92672">=</span>scsi,cache<span style="color:#f92672">=</span>none,io<span style="color:#f92672">=</span>native <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --network bridge<span style="color:#f92672">=</span>virbr0,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>MAC_WAN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --network bridge<span style="color:#f92672">=</span>vm-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>MAC_VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --network bridge<span style="color:#f92672">=</span>ha-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>MAC_HA<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --network bridge<span style="color:#f92672">=</span>ceph-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>MAC_CEPH<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span>      --network bridge<span style="color:#f92672">=</span>st-br,model<span style="color:#f92672">=</span>virtio,mac<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>MAC_STORE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> &amp;&gt;/dev/null; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        status <span style="color:#e6db74">&#34;[VM]    </span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;OK&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>GREEN<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        status <span style="color:#e6db74">&#34;[VM]    </span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#e6db74">&#34;FAIL&#34;</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>RED<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span> &lt; <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>footer
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>exit <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><h2 id="4-writing-the"><strong>4. Writing the <code>destroy_lab.sh</code> Script</strong><a hidden class="anchor" aria-hidden="true" href="#4-writing-the">#</a></h2>
+<h3 id="41-what-it-does"><strong>4.1 What It Does</strong><a hidden class="anchor" aria-hidden="true" href="#41-what-it-does">#</a></h3>
+<p>This script reverses everything <code>deploy_lab.sh</code> created. VMs get shut down and undefined, their disks deleted, and the networks torn down. Run it when you want a clean slate to start over.</p>
+<h3 id="42-teardown-order-and-idempotency"><strong>4.2 Teardown Order and Idempotency</strong><a hidden class="anchor" aria-hidden="true" href="#42-teardown-order-and-idempotency">#</a></h3>
+<p>Order matters: VMs first, then networks. You can&rsquo;t undefine a network that still has VMs attached to it—libvirt will complain. This is the reverse of deployment, where we created networks before VMs.</p>
+<p>Every destructive command has <code>|| true</code> appended. This makes the script idempotent: run it once, run it five times, you get the same result with no errors. VM already destroyed? Fine, move on. Network already undefined? No problem. This is defensive scripting—you don&rsquo;t want a teardown script to fail halfway because something was already partially cleaned up from a previous attempt.</p>
+<p>The <code>--remove-all-storage</code> flag on <code>virsh undefine</code> deletes the qcow2 disk images along with the VM definition. No orphaned 150GB files cluttering your image directory.</p>
+<h3 id="43-the-optional--i-flag"><strong>4.3 The Optional -i Flag</strong><a hidden class="anchor" aria-hidden="true" href="#43-the-optional--i-flag">#</a></h3>
+<p>By default, the script leaves your custom ISOs intact. Regenerating them requires the Debian 13 Distrobox container and takes time. If you&rsquo;re iterating on the lab and just want to rebuild VMs, keeping the ISOs saves a step. Pass <code>-i</code> when you want a truly clean slate.</p>
+<h3 id="44-the-script"><strong>4.4 The Script</strong><a hidden class="anchor" aria-hidden="true" href="#44-the-script">#</a></h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/usr/bin/env bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Script: destroy_lab.sh</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Purpose: Script to tear down the whole Virtual Proxmox Lab easily.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Copyright (C) 2026 Thomas Lutkus</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># This program is free software: you can redistribute it and/or modify</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># it under the terms of the GNU General Public License as published by</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># the Free Software Foundation, either version 3 of the License, or</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># (at your option) any later version.</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Dependencies: libvirt</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Requires: qemu:///system access (root or libvirt group)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Usage: ./destroy_lab.sh [-i] [CONFIG]</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Author: Thomas Lutkus</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Date: 2026-01-23</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Version: 1.0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -euo pipefail
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Script constants and variables go here</span>
+</span></span><span style="display:flex;"><span>CONF_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;../configs&#34;</span>
+</span></span><span style="display:flex;"><span>IMG_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/lib/libvirt/images&#34;</span>
+</span></span><span style="display:flex;"><span>DEL_ISO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;false&#34;</span>
+</span></span><span style="display:flex;"><span>NETWORKS<span style="color:#f92672">=(</span>ceph-br ha-br st-br vm-br<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Functions</span>
+</span></span><span style="display:flex;"><span>usage<span style="color:#f92672">()</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Usage: </span><span style="color:#e6db74">${</span>0<span style="color:#e6db74">}</span><span style="color:#e6db74"> [-i]&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;  -i  Also delete the custom ISO files&#34;</span> &gt;&amp;<span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Process script options</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">while</span> getopts <span style="color:#e6db74">&#34;i&#34;</span> OPTION
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> $OPTION in
+</span></span><span style="display:flex;"><span>    i<span style="color:#f92672">)</span> DEL_ISO<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;true&#34;</span> ;;
+</span></span><span style="display:flex;"><span>    *<span style="color:#f92672">)</span> usage ;;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">esac</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Shift the option away</span>
+</span></span><span style="display:flex;"><span>shift <span style="color:#66d9ef">$((</span>OPTIND <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span><span style="color:#66d9ef">))</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Assign a VM file file </span>
+</span></span><span style="display:flex;"><span>VM_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>1<span style="color:#66d9ef">:-</span>$CONF_DIR/vm.conf<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Script execution</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Tear down VMs first (before networks)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">while</span> IFS<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;,&#39;</span> read -r VM _; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Removing: </span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Shutdown and delete the VM and all files</span>
+</span></span><span style="display:flex;"><span>    virsh destroy <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> 2&gt;/dev/null <span style="color:#f92672">||</span> true
+</span></span><span style="display:flex;"><span>    virsh undefine <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> --remove-all-storage 2&gt;/dev/null <span style="color:#f92672">||</span> true
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Delete the ISO if the option was selected</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>DEL_ISO<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;true&#34;</span> <span style="color:#f92672">]]</span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        IMG_FILE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>IMG_DIR<span style="color:#e6db74">}</span><span style="color:#e6db74">/</span><span style="color:#e6db74">${</span>VM<span style="color:#e6db74">}</span><span style="color:#e6db74">_automated.iso&#34;</span>
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>        echo <span style="color:#e6db74">&#34;Deleting the ISO </span><span style="color:#e6db74">${</span>IMG_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>        rm -f <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>IMG_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span> &lt; <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>VM_FILE<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Shutdown and delete the networks (after VMs are gone)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> NET in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NETWORKS[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Removing network </span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    virsh net-destroy <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> 2&gt;/dev/null <span style="color:#f92672">||</span> true
+</span></span><span style="display:flex;"><span>    virsh net-undefine <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NET<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> 2&gt;/dev/null <span style="color:#f92672">||</span> true
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>exit <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p><strong>Important:</strong> I did not declare <code>default</code> in the <code>&quot;${NETWORKS}&quot;</code> list, because I still use it after I dismantle the lab. It&rsquo;s just like the <code>default</code> network which <em>libvirt</em> install originally. You could add that to the script if you like.</p>
+<h2 id="5-deploying-and-destroying-the-virtual-lab">5. Deploying and Destroying the Virtual Lab<a hidden class="anchor" aria-hidden="true" href="#5-deploying-and-destroying-the-virtual-lab">#</a></h2>
+<p>This is the simplest part. I will assume that you have a terminal capable of tabs or tiles, and that you have some understanding of the commands. At his point, you could clone my GitHub repository to make sure that you have the exact files, as you already understand what we built:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p ~/Projects <span style="color:#f92672">&amp;&amp;</span> git clone https://github.com/tomlutkus/virtual-proxmox-lab ~/Projects/virtual-proxmox-lab
+</span></span></code></pre></div><h3 id="51-make-the-files-for-the-other-nodes">5.1 Make the Files for the Other Nodes<a hidden class="anchor" aria-hidden="true" href="#51-make-the-files-for-the-other-nodes">#</a></h3>
+<p>Your directory structure should be something like this, if you haven&rsquo;t cloned my repository. This is also what&rsquo;s in there:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>├── guests
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; ├── create_iso.sh
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; ├── pve-01
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; ├── answer_pve-01.toml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; └── firstboot_pve-01.sh
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; ├── pve-02
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; ├── answer_pve-02.toml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; └── firstboot_pve-02.sh
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; └── pve-03
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp;     ├── answer_pve-03.toml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp;     └── firstboot_pve-03.sh
+</span></span><span style="display:flex;"><span>├── host
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; ├── configs
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; ├── ceph-br.xml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; ├── default.xml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; ├── ha-br.xml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; ├── st-br.xml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; ├── vm-br.xml
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; │&amp;nbsp;&amp;nbsp; └── vm.conf
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp; └── scripts
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp;     ├── deploy_lab.sh
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp;     ├── deploy_pve-01.sh
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp;     ├── deploy_pve-02.sh
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp;     ├── deploy_pve-03.sh
+</span></span><span style="display:flex;"><span>│&amp;nbsp;&amp;nbsp;     └── destroy_lab.sh
+</span></span></code></pre></div><p>If you want to do things manually and you haven&rsquo;t done it yet on Part 2, you can copy the files <code>answer_pve-01.toml</code> and <code>firstboot_pve-01.sh</code> from <code>guests/pve-01</code> into <code>guests/pve-0{2..3}</code> and work the files to have the correct names and MAC addresses. You need to be very attentive. You could use my files from the repo instead.</p>
+<h3 id="52-build-the-iso-files">5.2 Build the ISO files<a hidden class="anchor" aria-hidden="true" href="#52-build-the-iso-files">#</a></h3>
+<p><strong>Pre-requisite:</strong> Having the Proxmox VE 9.1 ISO you can download from the official website <a href="https://www.proxmox.com/en/downloads/proxmox-virtual-environment/iso/proxmox-ve-9-1-iso-installer" title="here">here</a>. Move the ISO file: <code>mv ~/Downloads/proxmox-ve_9.1-1.iso /var/lib/libvirt/images/</code> (assuming you configured directory permissions, otherwise use <code>sudo</code>).</p>
+<ol>
+<li><code>distrobox enter pve-tools</code></li>
+<li><code>cd ~/Projects/virtual-proxmox-lab/guests</code></li>
+<li><code>chmod +x create_iso.sh</code></li>
+<li><code>for N in pve-0{1..3}; do ./create_iso.sh &quot;${N}&quot;; done</code></li>
+<li><code>ls /var/lib/libvirt/images/*automated.iso</code> → you should see the files <code>pve-01_automated.iso</code>, <code>pve-02_automated.iso</code> and <code>pve-03_automated.iso</code>.</li>
+</ol>
+<h3 id="53-open-a-virt-viewer-to-watch-lab-deploy">5.3 Open a <code>virt-viewer</code> to Watch Lab Deploy<a hidden class="anchor" aria-hidden="true" href="#53-open-a-virt-viewer-to-watch-lab-deploy">#</a></h3>
+<p>In another terminal run this to keep <code>virt-viewer</code> windows in parallel for each instance:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> N in pve-0<span style="color:#f92672">{</span>1..3<span style="color:#f92672">}</span>; <span style="color:#66d9ef">do</span> virt-viewer -w -r <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>N<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> &amp; <span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><h3 id="54-run-the-deploy_labsh-script">5.4 Run the <code>deploy_lab.sh</code> Script<a hidden class="anchor" aria-hidden="true" href="#54-run-the-deploy_labsh-script">#</a></h3>
+<p>From the same or another terminal run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd ~/Projects/virtual-proxmox-lab/host/scripts
+</span></span><span style="display:flex;"><span>chmod +x deploy_lab.sh
+</span></span><span style="display:flex;"><span>./deploy_lab.sh
+</span></span></code></pre></div><p>You will see the installation unfold for all the 3 nodes. When they power down, start them again:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> N in pve-0<span style="color:#f92672">{</span>1..3<span style="color:#f92672">}</span>; <span style="color:#66d9ef">do</span> virsh start <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>N<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">done</span>
+</span></span></code></pre></div><p>And wait for them to complete the boot processes while they run the first-boot script.</p>
+<h3 id="55-test-that-it-works-destroy-repeat">5.5 Test that it Works, Destroy, Repeat<a hidden class="anchor" aria-hidden="true" href="#55-test-that-it-works-destroy-repeat">#</a></h3>
+<p>If you followed the series faithfully until now, you should be able to:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ssh root@192.168.122.1
+</span></span></code></pre></div><p>And log into the <code>pve-01</code> lab Proxmox VM successfully. You might need to specify your SSH key, or enter the password <code>Secret123!</code> depending on how your computer is configured. Once in the prompt, try:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ping -c <span style="color:#ae81ff">4</span> 192.168.122.2
+</span></span><span style="display:flex;"><span>ping -c <span style="color:#ae81ff">4</span> 192.168.122.3
+</span></span></code></pre></div><p>If both were successful, your lab is fully configured and networked.</p>
+<p>To destroy it, just run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>chmod +x destroy_lab.sh
+</span></span><span style="display:flex;"><span>./destroy_lab.sh
+</span></span></code></pre></div><p>And watch as it&rsquo;s torn down and your workstation is completely clean of the VMs and networks.</p>
+<h2 id="6-final-words-on-part-3">6. Final Words on Part 3<a hidden class="anchor" aria-hidden="true" href="#6-final-words-on-part-3">#</a></h2>
+<p>This one was a lot of work to write. I did not want to turn it into a shell script course, but I wanted instead for you to get a feeling of the process of building the lab topology manually, seeing what works, and then automating the process. This is a fully functional staging environment to practice Proxmox and Ceph clustering, which will be topics for the the upcoming parts in the series.</p>
+<p>My goal is <strong>not</strong> to help you get there as fast as possible. It is, instead, to hold your hands as you go through the mental processes yourself. Maybe you will have better ideas for some parts, or will have more knowledge about some things and that&rsquo;s great! I&rsquo;d love to hear about that.</p>
+<p>I&rsquo;m still working on the concept for the next session, which is coming next week. We will progress with the clustering and towards having a fully functional Proxmox infrastructure. Stay tuned!</p>
+<p>God bless you!</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/proxmox/">Proxmox</a></li>
+      <li><a href="http://localhost:1313/tags/homelab/">Homelab</a></li>
+      <li><a href="http://localhost:1313/tags/virsh/">Virsh</a></li>
+    </ul>
+<nav class="paginav">
+  <a class="next" href="http://localhost:1313/posts/vlab_part-2/">
+    <span class="title">Next »</span>
+    <br>
+    <span>Virtual Proxmox Lab (Part 2) - Auto-Install Proxmox</span>
+  </a>
+</nav>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2026 <a href="http://localhost:1313/">Thomas Lutkus</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

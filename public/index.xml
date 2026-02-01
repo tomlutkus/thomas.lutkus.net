@@ -6,10 +6,19 @@
     <description>Recent content on Thomas Lutkus</description>
     <generator>Hugo -- 0.154.5</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 25 Jan 2026 19:10:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 01 Feb 2026 17:20:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5)</title>
+      <title>Virtual Proxmox Lab (Part 3) - Scripting the Lab</title>
+      <link>http://localhost:1313/posts/vlab_part-3/</link>
+      <pubDate>Sun, 01 Feb 2026 17:20:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/vlab_part-3/</guid>
+      <description>&lt;h2 id=&#34;1-introduction&#34;&gt;1. Introduction&lt;/h2&gt;
+&lt;h3 id=&#34;11-foreword&#34;&gt;1.1 Foreword&lt;/h3&gt;
+&lt;p&gt;Over the last 2 weeks since I have started to write this series, I was asked a few times &amp;ldquo;what about&amp;rdquo; Ansible, Terraform and other automation tools. The easy answer is: they are besides the point of what I&amp;rsquo;m trying to achieve right now. When I learned to build a VMware cluster, I learned to build the virtualization platform first, and to understand the network topology and the whys. I think that good teaching builds toward something. This tutorial series is a lot about learning a builder&amp;rsquo;s mindset and learning how to put some things together. It&amp;rsquo;s not about a quick recipe for a ready-to-go thing. If I was aiming at just that, I could easily go to a &amp;ldquo;here&amp;rsquo;s the GitHub repo, here are the requirements and some basic instructions and off you go&amp;rdquo;. Or even &amp;ldquo;here&amp;rsquo;s the repo, go to your chatbot and figure it out&amp;rdquo;. Instead, I want the reader to see the struggles and feel the needs for certain tools. I&amp;rsquo;m also adding a lot of personal touch, like the way I&amp;rsquo;m doing the &lt;code&gt;~/libvirt&lt;/code&gt; directory. I like the idea of taking the chance to teach a new trick or two, or go into territory that most DevOps Engineers or SREs don&amp;rsquo;t go to. If you think about it, in this series I&amp;rsquo;m teaching how to build a virtualization cluster. I&amp;rsquo;m also excited to iterate on my network diagram designs, on the cluster design itself and for people to maybe see it and feel stoked to get into &amp;ldquo;learning the craft&amp;rdquo; through repetition and persistence.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Virtual Proxmox Lab (Part 2) - Auto-Install Proxmox</title>
       <link>http://localhost:1313/posts/vlab_part-2/</link>
       <pubDate>Sun, 25 Jan 2026 19:10:00 +0000</pubDate>
       <guid>http://localhost:1313/posts/vlab_part-2/</guid>
@@ -17,7 +26,7 @@
 &lt;p&gt;Now, we will be deploying an enterprise-grade lab. Therefore we need to think about how we do things in production: we can&amp;rsquo;t be clicking around and hoping for the best. This quickly compounds. We also need things to scale, to be idempotent (magic word for &amp;ldquo;always works the same&amp;rdquo;) and self-healing. As I see this series going right now, we will be iterating the design of our lab a little bit as we go, since there is always room for improving and learning. That being said, I have done some changes to Part 1 to keep things consistent with this new post, add some stuff and fix minor errors. You should check it out.&lt;/p&gt;</description>
     </item>
     <item>
-      <title>Virtual Proxmox Lab - Setting up your Environment (Part 1 of 5)</title>
+      <title>Virtual Proxmox Lab (Part 1) - Setting up your Environment</title>
       <link>http://localhost:1313/posts/vlab_part-1/</link>
       <pubDate>Sun, 18 Jan 2026 19:17:00 +0000</pubDate>
       <guid>http://localhost:1313/posts/vlab_part-1/</guid>

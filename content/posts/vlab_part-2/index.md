@@ -1,5 +1,5 @@
 +++
-title = "Virtual Proxmox Lab - Auto-Install Proxmox (Part 2 of 5)"
+title = "Virtual Proxmox Lab (Part 2) - Auto-Install Proxmox"
 date = '2026-01-25T19:10:00Z'
 draft = false
 tags = ["proxmox","homelab","virsh"]

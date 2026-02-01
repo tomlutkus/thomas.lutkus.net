@@ -7,6 +7,15 @@ series = ["virtualization"]
 categories = ["tutorials"]
 +++
 
++++
+title = "Virtual Proxmox Lab (Part 3) - Scripting the Lab"
+date = '2026-02-01T17:20:00Z'
+draft = false
+tags = ["proxmox","homelab","virsh"]
+series = ["virtualization"]
+categories = ["tutorials"]
++++
+
 ## 1. Introduction
 
 ### 1.1 Foreword
@@ -137,7 +146,7 @@ fi
 Before the script starts doing anything meaningful, we must check that the user actually provided a node name with the `-z` test verifying that the string is not empty.
 
 Things to take note here:
-- Redirect error messages to STDERR with `&gt;&amp;2` rather than STDOUT. It's helpful when someone is piping the outputs and don't want error messages and regular output mixed.
+- Redirect error messages to STDERR with `>&2` rather than STDOUT. It's helpful when someone is piping the outputs and don't want error messages and regular output mixed.
 - Usage message showing how to invoke the script correctly is a stable best-practice.
 - Exit with status 1 indicating failure, can be called with `${?}`.
 
@@ -160,7 +169,7 @@ fi
 
 The `proxmox-auto-install-assistant` only exists in Promox's repos, which are only available on Debian (the base distro where Proxmox runs). For the version which we are working with right now, Debian 13 (Trixie) is required. If you're following along on Arch, we will manage this by running Debian 13 inside a Distrobox container. Alternatively, you could be doing this on a computer running Debian 13 or Proxmox. I suspect it's not far-fetched that it would also work on Ubuntu.
 
-The first check grep `/etc/os-release` for "trixie" (case-insensitive). The second check with `dpkg-query` verifies that the required package is installed. We don't need to see the output, so we redirect both STOUT and STDERR to the black hole with `&amp;&gt;/dev/null`. We care only for the exit status. We are checking both cases with `!` meaning that this is a NOT conditional check.
+The first check grep `/etc/os-release` for "trixie" (case-insensitive). The second check with `dpkg-query` verifies that the required package is installed. We don't need to see the output, so we redirect both STOUT and STDERR to the black hole with `&>/dev/null`. We care only for the exit status. We are checking both cases with `!` meaning that this is a NOT conditional check.
 
 ### 2.6 The Main Event
 
@@ -669,37 +678,37 @@ Your directory structure should be something like this, if you haven't cloned my
 
 ```bash
 ├── guests
-│&nbsp;&nbsp; ├── create_iso.sh
-│&nbsp;&nbsp; ├── pve-01
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── answer_pve-01.toml
-│&nbsp;&nbsp; │&nbsp;&nbsp; └── firstboot_pve-01.sh
-│&nbsp;&nbsp; ├── pve-02
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── answer_pve-02.toml
-│&nbsp;&nbsp; │&nbsp;&nbsp; └── firstboot_pve-02.sh
-│&nbsp;&nbsp; └── pve-03
-│&nbsp;&nbsp;     ├── answer_pve-03.toml
-│&nbsp;&nbsp;     └── firstboot_pve-03.sh
+│   ├── create_iso.sh
+│   ├── pve-01
+│   │   ├── answer_pve-01.toml
+│   │   └── firstboot_pve-01.sh
+│   ├── pve-02
+│   │   ├── answer_pve-02.toml
+│   │   └── firstboot_pve-02.sh
+│   └── pve-03
+│       ├── answer_pve-03.toml
+│       └── firstboot_pve-03.sh
 ├── host
-│&nbsp;&nbsp; ├── configs
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── ceph-br.xml
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── default.xml
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── ha-br.xml
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── st-br.xml
-│&nbsp;&nbsp; │&nbsp;&nbsp; ├── vm-br.xml
-│&nbsp;&nbsp; │&nbsp;&nbsp; └── vm.conf
-│&nbsp;&nbsp; └── scripts
-│&nbsp;&nbsp;     ├── deploy_lab.sh
-│&nbsp;&nbsp;     ├── deploy_pve-01.sh
-│&nbsp;&nbsp;     ├── deploy_pve-02.sh
-│&nbsp;&nbsp;     ├── deploy_pve-03.sh
-│&nbsp;&nbsp;     └── destroy_lab.sh
+│   ├── configs
+│   │   ├── ceph-br.xml
+│   │   ├── default.xml
+│   │   ├── ha-br.xml
+│   │   ├── st-br.xml
+│   │   ├── vm-br.xml
+│   │   └── vm.conf
+│   └── scripts
+│       ├── deploy_lab.sh
+│       ├── deploy_pve-01.sh
+│       ├── deploy_pve-02.sh
+│       ├── deploy_pve-03.sh
+│       └── destroy_lab.sh
 ```
 
 If you want to do things manually and you haven't done it yet on Part 2, you can copy the files `answer_pve-01.toml` and `firstboot_pve-01.sh` from `guests/pve-01` into `guests/pve-0{2..3}` and work the files to have the correct names and MAC addresses. You need to be very attentive. You could use my files from the repo instead.
 
 ### 5.2 Build the ISO files
 
-**Pre-requisite:** Having the Proxmox VE 9.1 ISO you can download from the official website [here](<https://www.proxmox.com/en/downloads/proxmox-virtual-environment/iso/proxmox-ve-9-1-iso-installer> "here"). Move the ISO file: `mv ~/Downloads/proxmox-ve_9.1-1.iso /var/lib/libvirt/images/` (assuming you configured directory permissions, otherwise use `sudo`).
+**Pre-requisite:** Having the Proxmox VE 9.1 ISO you can download from the official website [here](https://www.proxmox.com/en/downloads/proxmox-virtual-environment/iso/proxmox-ve-9-1-iso-installer "here"). Move the ISO file: `mv ~/Downloads/proxmox-ve_9.1-1.iso /var/lib/libvirt/images/` (assuming you configured directory permissions, otherwise use `sudo`).
 
 1. `distrobox enter pve-tools`
 2. `cd ~/Projects/virtual-proxmox-lab/guests`

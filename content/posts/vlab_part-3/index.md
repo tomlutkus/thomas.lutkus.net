@@ -1,5 +1,5 @@
 +++
-title = "Virtual Proxmox Lab (Part 3) - Scripting the Lab"
+title = "Virtual Proxmox Lab (Part 3) - Scripting the Lab Deployment"
 date = '2026-02-01T17:20:00Z'
 draft = false
 tags = ["proxmox","homelab","virsh"]

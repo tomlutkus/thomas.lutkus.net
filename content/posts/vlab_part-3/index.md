@@ -7,15 +7,6 @@ series = ["virtualization"]
 categories = ["tutorials"]
 +++
 
-+++
-title = "Virtual Proxmox Lab (Part 3) - Scripting the Lab"
-date = '2026-02-01T17:20:00Z'
-draft = false
-tags = ["proxmox","homelab","virsh"]
-series = ["virtualization"]
-categories = ["tutorials"]
-+++
-
 ## 1. Introduction
 
 ### 1.1 Foreword

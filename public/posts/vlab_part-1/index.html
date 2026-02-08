@@ -12,7 +12,7 @@
 I have some cool experience deploying and configuring a Proxmox cluster with High Availability and fully redundant Ceph in production. I thought it&rsquo;d be cool to share my insights. Since I have been meaning to redeploy my lab on my laptop to test some things, I thought this is a good time. To start, this post will be about setting up the lab environment and install one Proxmox instance. I&rsquo;m going to write a few other tutorials as I go. You are free to use the content here as you see fit. I would appreciate being credited, but that&rsquo;s not a requirement.">
 <meta name="author" content="Thomas Lutkus">
 <link rel="canonical" href="http://localhost:1313/posts/vlab_part-1/">
-<link crossorigin="anonymous" href="/assets/css/stylesheet.343cc480b9ffc8f04ccbe5e968ad674880cab773ec19905e93033065c1e7a804.css" integrity="sha256-NDzEgLn/yPBMy&#43;XpaK1nSIDKt3PsGZBekwMwZcHnqAQ=" rel="preload stylesheet" as="style">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.2ae80d997920fac20269f2a8fa3db25838f90cac519c888197094668cfe9171d.css" integrity="sha256-KugNmXkg&#43;sICafKo&#43;j2yWDj5DKxRnIiBlwlGaM/pFx0=" rel="preload stylesheet" as="style">
 <link rel="icon" href="http://localhost:1313/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
@@ -73,20 +73,85 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
     }
 
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
 </head>
 <body id="top">
     <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:1313/" accesskey="h" title="Thomas Lutkus (Alt + H)">Thomas Lutkus</a>
-            <div class="logo-switches">
+                <a href="http://localhost:1313/" accesskey="h" title="Thomas Lutkus (Alt + H)">Thomas Lutkus</a>
+        </div>
+
+        <div class="nav-right"><ul id="menu">
+                <li>
+                    <a href="http://localhost:1313/posts/" title="Posts">
+                        <span >Posts</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost:1313/tags/" title="Tags">
+                        <span >Tags</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost:1313/series/" title="Series">
+                        <span >Series</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost:1313/categories/" title="Categories">
+                        <span >Categories</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://localhost:1313/about/" title="About">
+                        <span >About</span>
+                    </a>
+                </li>
+            </ul><span class="nav-separator">|</span><div class="header-social-icons">
+                <a href="https://github.com/tomlutkus" target="_blank" rel="noopener noreferrer me"
+                    title="github">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path
+        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+    </path>
+</svg>
+                </a>
+                <a href="https://www.linkedin.com/in/thomas-lutkus/" target="_blank" rel="noopener noreferrer me"
+                    title="linkedin">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+    <rect x="2" y="9" width="4" height="12"></rect>
+    <circle cx="4" cy="4" r="2"></circle>
+</svg>
+                </a>
+                <a href="mailto:blog@lutkus.net" target="_blank" rel="noopener noreferrer me"
+                    title="email">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 21" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+    <polyline points="22,6 12,13 2,6"></polyline>
+</svg>
+                </a>
+            </div><span class="nav-separator">|</span><div class="header-util-icons"><a href="http://localhost:1313/search/" class="header-icon-link" title="Search (Alt + /)" accesskey="/">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </a>
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
-                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
-                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
                         <circle cx="12" cy="12" r="5"></circle>
@@ -102,36 +167,8 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
                 </button>
             </div>
         </div>
-        <ul id="menu">
-            <li>
-                <a href="http://localhost:1313/posts/" title="Posts">
-                    <span>Posts</span>
-                </a>
-            </li>
-            <li>
-                <a href="http://localhost:1313/tags/" title="Tags">
-                    <span>Tags</span>
-                </a>
-            </li>
-            <li>
-                <a href="http://localhost:1313/series/" title="Series">
-                    <span>Series</span>
-                </a>
-            </li>
-            <li>
-                <a href="http://localhost:1313/categories/" title="Categories">
-                    <span>Categories</span>
-                </a>
-            </li>
-            <li>
-                <a href="http://localhost:1313/about/" title="About">
-                    <span>About</span>
-                </a>
-            </li>
-        </ul>
     </nav>
-</header>
-<main class="main">
+</header><main class="main">
 
 <article class="post-single">
   <header class="post-header">
@@ -183,7 +220,7 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 <h2 id="2-setting-up-the-environment">2. Setting Up the Environment<a hidden class="anchor" aria-hidden="true" href="#2-setting-up-the-environment">#</a></h2>
 <h3 id="21-setting-up-varliblibvirt">2.1. Setting up <code>/var/lib/libvirt</code><a hidden class="anchor" aria-hidden="true" href="#21-setting-up-varliblibvirt">#</a></h3>
 <p>If you go with the defaults, you could skip to #2. I, however, have a matter of personal preference: I like to do things from my <code>~/</code> directory, and on my machine I have a 2TB NVMe specifically allocated for <code>/home</code>. I thought I&rsquo;d go with symlinks, but I had some issues with this a while ago. I did some research and found out that bind mounts are the best approach: you get the same filesystem location exposed at two paths. Avoids all the potential weirdness from using symlinks for this. This is where all of your virtualization files, which consume a lot of disk space, will reside.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create ~/libvirt</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create ~/libvirt</span>
 </span></span><span style="display:flex;"><span>mkdir /home/<span style="color:#e6db74">${</span>USER<span style="color:#e6db74">}</span>/libvirt
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Create /var/lib/libvirt</span>
@@ -203,7 +240,7 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 </span></span><span style="display:flex;"><span>ls /var/lib/libvirt/testfile
 </span></span></code></pre></div><p>My <code>/home</code> is encrypted on a separate volume as <code>/</code>. As long as the new mount is at the bottom of <code>/etc/fstab</code>, which it should, it should be handled automatically if you followed my steps.</p>
 <p>For this to work well, we need to manage directory permissions with ACLs, so that all the necessary users can operate in the directory:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Ensure ~/ is traversable</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Ensure ~/ is traversable</span>
 </span></span><span style="display:flex;"><span>chmod <span style="color:#ae81ff">755</span> ~/
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Set base permissions on libvirt dir</span>
@@ -221,13 +258,13 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 <h3 id="22-configuring-the-virtualization-suite">2.2. Configuring the Virtualization Suite<a hidden class="anchor" aria-hidden="true" href="#22-configuring-the-virtualization-suite">#</a></h3>
 <h4 id="221-setting-up-the-system">2.2.1. Setting up the System<a hidden class="anchor" aria-hidden="true" href="#221-setting-up-the-system">#</a></h4>
 <p>We will now install the necessary virtualization packages:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo pacman -S libvirt qemu-full virt-manager virt-viewer dnsmasq ebtables dmidecode
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo pacman -S libvirt qemu-full virt-manager virt-viewer dnsmasq ebtables dmidecode
 </span></span></code></pre></div><p>Once that&rsquo;s done, add your user to the <code>libvirt</code> group:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo usermod -aG libvirt <span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo usermod -aG libvirt <span style="color:#66d9ef">$(</span>whoami<span style="color:#66d9ef">)</span>
 </span></span></code></pre></div><p>Then enable and start the <code>libvirtd</code> service:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl enable --now libvirtd
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo systemctl enable --now libvirtd
 </span></span></code></pre></div><p>And check if no errors with <code>systemctl status libvirtd</code>, it should show something like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>● libvirtd.service - libvirt legacy monolithic daemon
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>● libvirtd.service - libvirt legacy monolithic daemon
 </span></span><span style="display:flex;"><span>     Loaded: loaded <span style="color:#f92672">(</span>/usr/lib/systemd/system/libvirtd.service; enabled; preset: disabled<span style="color:#f92672">)</span>
 </span></span><span style="display:flex;"><span>     Active: active <span style="color:#f92672">(</span>running<span style="color:#f92672">)</span> since Sun 2026-01-18 17:09:03 GMT; 5s ago
 </span></span><span style="display:flex;"><span> Invocation: 43007c7f51c445a485af01f5f3ba08f5
@@ -246,23 +283,23 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 </span></span><span style="display:flex;"><span>Jan <span style="color:#ae81ff">18</span> 17:09:03 laptop systemd<span style="color:#f92672">[</span>1<span style="color:#f92672">]</span>: Starting libvirt legacy monolithic daemon...
 </span></span><span style="display:flex;"><span>Jan <span style="color:#ae81ff">18</span> 17:09:03 laptop systemd<span style="color:#f92672">[</span>1<span style="color:#f92672">]</span>: Started libvirt legacy monolithic daemon.
 </span></span></code></pre></div><p>Also check that the daemon is responding to commands with <code>virsh list --all</code>, it should return an empty table:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ virsh list --all
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ virsh list --all
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Expected output:</span>
 </span></span><span style="display:flex;"><span> Id   Name   State
 </span></span><span style="display:flex;"><span>--------------------
 </span></span></code></pre></div><p>Now you need to configure your user to connect to <code>qemu:///system</code> where the real networking happens, rather than <code>qemu:///session</code>:</p>
 <p>Add this line to your <code>.bashrc</code> file and reload your shell:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;export LIBVIRT_DEFAULT_URI=&#34;qemu:///system&#34;&#39;</span> &gt;&gt; ~/.bashrc
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#39;export LIBVIRT_DEFAULT_URI=&#34;qemu:///system&#34;&#39;</span> &gt;&gt; ~/.bashrc
 </span></span><span style="display:flex;"><span>source ~/.bashrc
 </span></span></code></pre></div><p>Test with <code>virsh uri</code>, if it shows <code>qemu:///system</code>, you&rsquo;re good to go:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ virsh uri
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ virsh uri
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Expected output:</span>
 </span></span><span style="display:flex;"><span>qemu:///system 
 </span></span></code></pre></div><h4 id="222-setting-up-the-project-directory">2.2.2. Setting up the Project Directory<a hidden class="anchor" aria-hidden="true" href="#222-setting-up-the-project-directory">#</a></h4>
 <p>We will be building a directory structure where we will be storing our files:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p ~/Projects/virtual-proxmox-lab/<span style="color:#f92672">{</span>diagrams,guests/<span style="color:#f92672">{</span>pve-01,pve-02,pve-03,pbs<span style="color:#f92672">}</span>,host/<span style="color:#f92672">{</span>configs,scripts<span style="color:#f92672">}}</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p ~/Projects/virtual-proxmox-lab/<span style="color:#f92672">{</span>diagrams,guests/<span style="color:#f92672">{</span>pve-01,pve-02,pve-03,pbs<span style="color:#f92672">}</span>,host/<span style="color:#f92672">{</span>configs,scripts<span style="color:#f92672">}}</span>
 </span></span></code></pre></div><p>We might be changing things in this directory later on. This is how it should look like right now:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tree -L <span style="color:#ae81ff">2</span> virtual-proxmox-lab/
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tree -L <span style="color:#ae81ff">2</span> virtual-proxmox-lab/
 </span></span><span style="display:flex;"><span><span style="color:#75715e"># Expected output:</span>
 </span></span><span style="display:flex;"><span>virtual-proxmox-lab/
 </span></span><span style="display:flex;"><span>├── diagrams
@@ -278,11 +315,11 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 <h3 id="23-setting-up-the-networks">2.3. Setting up the Networks<a hidden class="anchor" aria-hidden="true" href="#23-setting-up-the-networks">#</a></h3>
 <h4 id="231-redefine-default">2.3.1. Redefine <code>default</code><a hidden class="anchor" aria-hidden="true" href="#231-redefine-default">#</a></h4>
 <p>First we will set up the default NAT network with the settings we desire. It&rsquo;s likely already set up, so run:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh net-stop default
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh net-stop default
 </span></span><span style="display:flex;"><span>virsh net-destroy default
 </span></span><span style="display:flex;"><span>virsh net-undefine default
 </span></span></code></pre></div><p>Then go to your directory <code>~/Projects/virtual-proxmox-lab/host/configs</code>. This is where we will leave template files. Once there <code>vim default.xml</code> and add this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>default<span style="color:#f92672">&lt;/name&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;forward</span> <span style="color:#a6e22e">mode=</span><span style="color:#e6db74">&#34;nat&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;virbr0&#34;</span><span style="color:#f92672">/&gt;</span>
@@ -293,12 +330,12 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/ip&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
 </span></span></code></pre></div><p>Then run the following commands to activate the network:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh net-define default.xml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>virsh net-define default.xml
 </span></span><span style="display:flex;"><span>virsh net-start default
 </span></span><span style="display:flex;"><span>virsh net-autostart default
 </span></span><span style="display:flex;"><span>virsh net-list --all
 </span></span></code></pre></div><p>We are going with a class C <code>192.168.122.0/24</code> subnet because it&rsquo;s already the default, and because it&rsquo;s very distinct from class A, which is what we will be using for the other subnets. Check that the interface <code>virbr0</code> exists:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ip a | grep virbr0
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ip a | grep virbr0
 </span></span><span style="display:flex;"><span>6: virbr0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
 </span></span><span style="display:flex;"><span>    inet 192.168.122.254/24 brd 192.168.122.255 scope global virbr0
 </span></span></code></pre></div><p>You will notice that the host, which will also be the gateway to the Proxmox VMs, is using IP ending in <code>.254</code>. That&rsquo;s a personal preference, as I like when we have <code>vm-pve1</code>, <code>vm-pve2</code> and <code>vm-pve3</code> to have their IPs ending in <code>.1</code>, <code>.2</code> and <code>.3</code> respectively. Keeps everything easy to remember and tidy.</p>
@@ -313,36 +350,36 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 <p>The logic for these addresses is that we would &ldquo;backbone&rdquo; infrastructure to be distinct from where our VMs are. I also choose IPs which will <em>probably</em> not collide with whatever configuration you have at home. I also think that is a good practice for production environments, to choose private IPs which will likely not conflict with home routers. In the case of the bridge <code>vm-br</code>: in a production environment you would probably have multiple VLANs and subnets there rather than just one, potentially servicing thousands of devices.</p>
 <p>Now you can copy the <code>.xml</code> bellow into your <code>~/Projects/virtual-proxmox-lab/host/configs</code> directory, using <code>vim</code> or whatever you prefer to create each file:</p>
 <p><strong>file: <code>ha-br.xml</code></strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>ha-br<span style="color:#f92672">&lt;/name&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;ha-br&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;10.0.253.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
 </span></span></code></pre></div><p><strong>file: <code>ceph-br.xml</code></strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>ceph-br<span style="color:#f92672">&lt;/name&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;ceph-br&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;10.0.254.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
 </span></span></code></pre></div><p><strong>file: <code>st-br.xml</code></strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>st-br<span style="color:#f92672">&lt;/name&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;st-br&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;ip</span> <span style="color:#a6e22e">address=</span><span style="color:#e6db74">&#34;10.0.255.254&#34;</span> <span style="color:#a6e22e">netmask=</span><span style="color:#e6db74">&#34;255.255.255.0&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
 </span></span></code></pre></div><p><strong>file: <code>vm-br.xml</code></strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;network&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;name&gt;</span>vm-br<span style="color:#f92672">&lt;/name&gt;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;bridge</span> <span style="color:#a6e22e">name=</span><span style="color:#e6db74">&#34;vm-br&#34;</span><span style="color:#f92672">/&gt;</span>
 </span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/network&gt;</span>
 </span></span></code></pre></div><p>After you&rsquo;re done, time to enable all of them. Let&rsquo;s use a <code>for</code> loop to save us some time:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> net in ha-br ceph-br st-br vm-br; <span style="color:#66d9ef">do</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> net in ha-br ceph-br st-br vm-br; <span style="color:#66d9ef">do</span>
 </span></span><span style="display:flex;"><span>  virsh net-define <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>.xml
 </span></span><span style="display:flex;"><span>  virsh net-start <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span>  virsh net-autostart <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><p>Now when you check with <code>virsh net-list --all</code> this is what you should see:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>❯ virsh net-list --all
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>❯ virsh net-list --all
 </span></span><span style="display:flex;"><span> Name      State    Autostart   Persistent
 </span></span><span style="display:flex;"><span>--------------------------------------------
 </span></span><span style="display:flex;"><span> ceph-br   active   yes         yes
@@ -351,11 +388,11 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 </span></span><span style="display:flex;"><span> st-br     active   yes         yes
 </span></span><span style="display:flex;"><span> vm-br     active   yes         yes
 </span></span></code></pre></div><p>And another quick check on your actual network interfaces:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> net in ha-br ceph-br st-br vm-br; <span style="color:#66d9ef">do</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">for</span> net in ha-br ceph-br st-br vm-br; <span style="color:#66d9ef">do</span>
 </span></span><span style="display:flex;"><span>  ip a | grep <span style="color:#e6db74">${</span>net<span style="color:#e6db74">}</span>
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
 </span></span></code></pre></div><p>Which should give you something like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>6: virbr0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>6: virbr0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
 </span></span><span style="display:flex;"><span>    inet 192.168.122.254/24 brd 192.168.122.255 scope global virbr0
 </span></span><span style="display:flex;"><span>7: ha-br: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
 </span></span><span style="display:flex;"><span>    inet 10.0.253.254/24 brd 10.0.253.255 scope global ha-br
@@ -366,7 +403,7 @@ I have some cool experience deploying and configuring a Proxmox cluster with Hig
 </span></span><span style="display:flex;"><span>10: vm-br: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu <span style="color:#ae81ff">1500</span> qdisc htb state DOWN group default qlen <span style="color:#ae81ff">1000</span>
 </span></span></code></pre></div><h2 id="3-wrapping-up">3. Wrapping up<a hidden class="anchor" aria-hidden="true" href="#3-wrapping-up">#</a></h2>
 <p>Install <code>tree</code> with <code>sudo pacman -S tree</code>. Then run <code>tree -L 2</code> from the project&rsquo;s folder and you should be looking at something like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tree -L <span style="color:#ae81ff">2</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>$ tree -L <span style="color:#ae81ff">2</span>
 </span></span><span style="display:flex;"><span>.
 </span></span><span style="display:flex;"><span>├── diagrams
 </span></span><span style="display:flex;"><span>├── guests

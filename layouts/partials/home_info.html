@@ -1,0 +1,10 @@
+{{- /* Custom home_info: tagline only with dividers, no duplicate name, no social icons (moved to header) */ -}}
+{{- with site.Params.homeInfoParams }}
+<article class="first-entry home-info">
+    <hr class="home-info-divider">
+    <div class="entry-content">
+        <p>{{ .Content | markdownify }}</p>
+    </div>
+    <hr class="home-info-divider">
+</article>
+{{- end }}

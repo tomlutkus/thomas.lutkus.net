@@ -4,12 +4,12 @@
     <title>Thomas Lutkus</title>
     <link>http://localhost:1313/</link>
     <description>Recent content on Thomas Lutkus</description>
-    <generator>Hugo -- 0.154.5</generator>
+    <generator>Hugo -- 0.155.2</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 01 Feb 2026 17:20:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Virtual Proxmox Lab (Part 3) - Scripting the Lab</title>
+      <title>Virtual Proxmox Lab (Part 3) - Scripting the Lab Deployment</title>
       <link>http://localhost:1313/posts/vlab_part-3/</link>
       <pubDate>Sun, 01 Feb 2026 17:20:00 +0000</pubDate>
       <guid>http://localhost:1313/posts/vlab_part-3/</guid>
@@ -64,15 +64,9 @@
       <link>http://localhost:1313/about/</link>
       <pubDate>Thu, 08 Jan 2026 00:00:00 +0000</pubDate>
       <guid>http://localhost:1313/about/</guid>
-      <description>&lt;p&gt;Infrastructure engineer based in Ireland. 15+ years building and supporting Linux systems across enterprise environments.&lt;/p&gt;
-&lt;p&gt;I&amp;rsquo;ve worked at AT&amp;amp;T, IBM, BT, Zalando, HelloFresh, TomTom, and VMware. Currently focused on virtualization Linux and Virtualization (Proxmox, RHEL), automation (Ansible), and security compliance.&lt;/p&gt;
-&lt;p&gt;Pursuing RHCSA and RHCE certifications in 2026.&lt;/p&gt;
-&lt;p&gt;This blog covers:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;Technical posts&lt;/strong&gt;: Linux administration, Ansible, Proxmox, shell scripting, problems I&amp;rsquo;ve solved.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Thinking posts&lt;/strong&gt;: Work ethics, privacy, technology and society, occasional philosophy with a Christian perspective.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;I like to write what I learn and my thoughts. No fluff, no engagement bait.&lt;/p&gt;</description>
+      <description>&lt;p&gt;I&amp;rsquo;m Thomas. Brazilian by birth, shaped by years in Germany, and currently settled in Ireland with my family.&lt;/p&gt;
+&lt;p&gt;My faith in Christ is central to who I am. It informs my ethics, how I treat people, and the standard I hold my work to. I believe it&amp;rsquo;s true, and I think truth is worth sharing.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;ve spent over fifteen years in infrastructure engineering, mostly Linux, networking, and virtualization. I&amp;rsquo;ve worked across telecoms, logistics, e-commerce, and healthcare, from night shifts in a network operations center to architecting systems from scratch. The companies and titles changed, but the work stayed the same: make things work, keep them running, and leave them better than you found them.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>

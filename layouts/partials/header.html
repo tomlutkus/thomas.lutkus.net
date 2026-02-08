@@ -1,0 +1,106 @@
+{{- /* Custom header: Logo | Nav Links | ┃ | Social Icons | Search | Theme Toggle */ -}}
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            {{- $label := site.Title }}
+            {{- with site.Params.label }}
+                {{- if .text }}{{ $label = .text }}{{ end }}
+                {{- if .icon }}
+                    {{- $icon_url := .icon | absURL }}
+                    <a href="{{ "" | absLangURL }}" accesskey="h" title="{{ $label }} (Alt + H)">
+                        <img src="{{ $icon_url }}" alt="" aria-hidden="true"
+                            {{- with .iconHeight }} height="{{ . }}"{{ end }}>{{ $label }}</a>
+                {{- else }}
+                    <a href="{{ "" | absLangURL }}" accesskey="h" title="{{ $label }} (Alt + H)">{{ $label }}</a>
+                {{- end }}
+            {{- else }}
+                <a href="{{ "" | absLangURL }}" accesskey="h" title="{{ $label }} (Alt + H)">{{ $label }}</a>
+            {{- end }}
+        </div>
+
+        <div class="nav-right">
+            {{- /* Text menu links */ -}}
+            <ul id="menu">
+                {{- range site.Menus.main }}
+                {{- $menu_name := .Name }}
+                {{- $menu_url := .URL | absLangURL }}
+                {{- if .HasChildren }}
+                <li>
+                    <a href="{{ $menu_url }}">
+                        <span>{{ $menu_name }}</span>
+                    </a>
+                    <ul class="subMenu">
+                        {{- range .Children }}
+                        <li>
+                            <a href="{{ .URL | absLangURL }}" title="{{ .Title | default .Name }}">
+                                <span {{ if $.IsMenuCurrent "main" . }}class="active"{{ end }}>{{ .Name }}</span>
+                            </a>
+                        </li>
+                        {{- end }}
+                    </ul>
+                </li>
+                {{- else }}
+                <li>
+                    <a href="{{ $menu_url }}" title="{{ .Title | default .Name }}">
+                        <span {{ if $.IsMenuCurrent "main" . }}class="active"{{ end }}>{{ $menu_name }}</span>
+                    </a>
+                </li>
+                {{- end }}
+                {{- end }}
+            </ul>
+
+            {{- /* Separator 1 */ -}}
+            <span class="nav-separator">|</span>
+
+            {{- /* Social icons in header */ -}}
+            <div class="header-social-icons">
+                {{- range site.Params.socialIcons }}
+                <a href="{{ .url | safeURL }}" target="_blank" rel="noopener noreferrer me"
+                    title="{{ .title | default .name }}">
+                    {{ partial "svg.html" . }}
+                </a>
+                {{- end }}
+            </div>
+
+            {{- /* Separator 2 */ -}}
+            <span class="nav-separator">|</span>
+
+            {{- /* Utility icons: search + theme toggle */ -}}
+            <div class="header-util-icons">
+                {{- /* Search icon */ -}}
+                <a href="{{ "search/" | absLangURL }}" class="header-icon-link" title="Search (Alt + /)" accesskey="/">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </a>
+
+                {{- /* Theme toggle */ -}}
+                {{- if (not site.Params.disableThemeToggle) }}
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+                {{- end }}
+            </div>
+        </div>
+    </nav>
+</header>

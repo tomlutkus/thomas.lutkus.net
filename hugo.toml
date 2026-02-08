@@ -9,6 +9,9 @@ timeZone = "Europe/Dublin"
   category = "categories"
   series = "series"
 
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+
 [params]
   author = "Thomas Lutkus"
   description = "Infrastructure engineering, Linux, Automation"
@@ -16,7 +19,33 @@ timeZone = "Europe/Dublin"
   ShowPostNavLinks = true
   ShowCodeCopyButtons = true
   dateFormat = "January 2, 2006"
-  
+
+  [params.homeInfoParams]
+    Title = ""
+    Content = """
+I follow Christ, raise a family, and build infrastructure for a living, in that order. \
+That order matters because it shapes how I approach everything else, the work I do and \
+the standards I hold myself to. Fifteen years of Linux and networks taught me that the \
+best systems, like the best lives, are built on solid foundations and kept simple. I'm \
+opinionated, I'd rather be honest than polished, and I tend to think things through for \
+myself rather than borrow someone else's conclusions. I need to understand something \
+deeply before I make it mine. I write about infrastructure, automation, my own thoughts \
+and opinions, and whatever else I'm working through. If you value simplicity, truth, and \
+honest work, welcome. If not, stick around anyway, you might change your mind.
+"""
+
+  [[params.socialIcons]]
+    name = "github"
+    url  = "https://github.com/tomlutkus"
+
+  [[params.socialIcons]]
+    name = "linkedin"
+    url  = "https://www.linkedin.com/in/thomas-lutkus/"
+
+  [[params.socialIcons]]
+    name = "email"
+    url  = "mailto:blog@lutkus.net"
+
 [menu]
   [[menu.main]]
     name = "Posts"

@@ -1,0 +1,166 @@
+/* ─── LOGO / SITE TITLE FONT ─────────────────────────────── */
+.logo a {
+    font-family: 'Special Elite', cursive !important;
+    font-weight: 400;
+    font-size: 2rem;
+    letter-spacing: 0.03em;
+}
+
+/* ─── HEADER NAV LAYOUT ──────────────────────────────────── */
+/* Restructure: Logo (left) | everything else (right) */
+.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* Text menu items */
+.nav-right #menu {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 4px;
+}
+
+/* ─── VERTICAL SEPARATOR ─────────────────────────────────── */
+.nav-separator {
+    color: var(--secondary);
+    opacity: 0.4;
+    margin: 0 12px;
+    font-weight: 300;
+    font-size: 1.2rem;
+    user-select: none;
+}
+
+/* ─── HEADER SOCIAL ICONS ────────────────────────────────── */
+.header-social-icons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-social-icons a {
+    display: inline-flex;
+    align-items: center;
+    color: var(--secondary);
+    transition: color 0.2s ease;
+    line-height: 0;
+}
+
+.header-social-icons a:hover {
+    color: var(--primary);
+}
+
+.header-social-icons svg {
+    height: 22px !important;
+    width: 22px !important;
+}
+
+/* ─── UTILITY ICONS (search + theme toggle) ──────────────── */
+.header-util-icons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-icon-link {
+    display: inline-flex;
+    align-items: center;
+    color: var(--secondary);
+    transition: color 0.2s ease;
+    line-height: 0;
+}
+
+.header-icon-link:hover {
+    color: var(--primary);
+}
+
+.header-icon-link svg {
+    height: 22px !important;
+    width: 22px !important;
+}
+
+/* ─── THEME TOGGLE (moved to util group) ─────────────────── */
+.header-util-icons #theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    color: var(--secondary);
+    padding: 0;
+    transition: color 0.2s ease;
+    line-height: 0;
+}
+
+.header-util-icons #theme-toggle:hover {
+    color: var(--primary);
+}
+
+.header-util-icons #theme-toggle svg {
+    height: 22px !important;
+    width: 22px !important;
+}
+
+/* Hide the old logo-switches container (theme toggle was there) */
+.logo-switches {
+    display: none !important;
+}
+
+/* ─── HOME INFO (tagline with dividers) ──────────────────── */
+.home-info .entry-content p {
+    font-style: italic;
+    text-align: center;
+    font-size: 1.05rem;
+    color: var(--secondary);
+    margin: 0;
+    padding: 20px 0;
+}
+
+.first-entry.home-info {
+    border: none;
+    box-shadow: none;
+    background: none;
+    margin: 0 0 10px 0;
+    padding: 0;
+}
+
+.home-info-divider {
+    border: none !important;
+    border-top: 1px solid var(--primary) !important;
+    opacity: 0.2;
+    margin: 0 !important;
+    display: block !important;
+    height: 0 !important;
+}
+
+/* ─── RESPONSIVE: stack on small screens ─────────────────── */
+@media (max-width: 768px) {
+    .nav {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .nav-right {
+        justify-content: center;
+        gap: 0;
+    }
+
+    .nav-separator {
+        margin: 0 8px;
+    }
+
+    .logo a {
+        font-size: 1.7rem;
+    }
+}

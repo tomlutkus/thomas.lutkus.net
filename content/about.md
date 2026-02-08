@@ -1,20 +1,18 @@
 ---
 title: "About"
-date: 2026-01-08T00:00:00Z
-draft: false
+date: 2026-01-08
+author: "Thomas Lutkus"
+showReadingTime: false
 ---
 
-Infrastructure engineer based in Ireland. 15+ years building and supporting Linux systems across enterprise environments.
+I'm Thomas. Brazilian by birth, shaped by years in Germany, and currently settled in Ireland with my family.
 
-I've worked at AT&T, IBM, BT, Zalando, HelloFresh, TomTom, and VMware. Currently focused on virtualization Linux and Virtualization (Proxmox, RHEL), automation (Ansible), and security compliance.
+My faith in Christ is central to who I am. It informs my ethics, how I treat people, and the standard I hold my work to. I believe it's true, and I think truth is worth sharing.
 
-Pursuing RHCSA and RHCE certifications in 2026.
+I've spent over fifteen years in infrastructure engineering, mostly Linux, networking, and virtualization. I've worked across telecoms, logistics, e-commerce, and healthcare, from night shifts in a network operations center to architecting systems from scratch. The companies and titles changed, but the work stayed the same: make things work, keep them running, and leave them better than you found them.
 
-This blog covers:
+I started this blog because I wanted a place to write honestly. The technical posts cover what I'm actually working on: Linux administration, Proxmox, Ansible, shell scripting, problems I've solved and how. The rest is whatever I'm thinking through: work ethics, privacy, technology and society, the occasional opinion that might not be popular.
 
-- **Technical posts**: Linux administration, Ansible, Proxmox, shell scripting, problems I've solved.
-- **Thinking posts**: Work ethics, privacy, technology and society, occasional philosophy with a Christian perspective.
+No fluff, no engagement bait. I write what I learn and what I think.
 
-I like to write what I learn and my thoughts. No fluff, no engagement bait.
-
-Contact: blog@lutkus.net
+If you want to get in touch, [blog@lutkus.net](mailto:blog@lutkus.net) is the way.

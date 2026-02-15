@@ -4,14 +4,14 @@
     <title>Categories on Thomas Lutkus</title>
     <link>http://localhost:1313/categories/</link>
     <description>Recent content in Categories on Thomas Lutkus</description>
-    <generator>Hugo -- 0.155.2</generator>
+    <generator>Hugo -- 0.155.3</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 01 Feb 2026 17:20:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 14 Feb 2026 19:00:00 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Tutorials</title>
       <link>http://localhost:1313/categories/tutorials/</link>
-      <pubDate>Sun, 01 Feb 2026 17:20:00 +0000</pubDate>
+      <pubDate>Sat, 14 Feb 2026 19:00:00 +0000</pubDate>
       <guid>http://localhost:1313/categories/tutorials/</guid>
       <description></description>
     </item>

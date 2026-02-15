@@ -61,7 +61,6 @@ You could probably get away with 16GB RAM for the PVE nodes, however that will r
 We need to install the `proxmox-auto-install-assistant` program. Proxmox maintains it for Debian, because that's the platform where Proxmox runs. Assuming that you are following along on Arch: we can easily fix this with Distrobox: run a lightweight Debian 13 container and manager it from there. You could get away with a regular docker container or a Debian 13 (or Proxmox) VM too. I'm covering the Arch Linux steps:
 
 ### 2.1. Arch: Setting up Distrobox and Debian 13
-
 First install it with `pacman`:
 
 ```bash
@@ -70,13 +69,13 @@ sudo pacman -S distrobox
 
 Next, create a Debian 13 (at this time) container:
 
-```
+```bash
 distrobox create -i debian:latest -n pve-tools
 ```
 
 We gave it the name `pve-tools`. Enter the container, it should take a couple of minutes the first time:
 
-```
+```bash
 distrobox enter pve-tools
 ```
 
@@ -95,19 +94,19 @@ sudo mkdir -p /etc/apt/keyrings
 Then, add the Proxmox GPG key:
 
 ```bash
-sudo wget https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg -O /etc/apt/keyrings/proxmox-release-bookworm.gpg
+sudo wget https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg -O /etc/apt/keyrings/proxmox-release-trixie.gpg
 ```
 
 Add the Proxmox `no-subscription` repository:
 
 ```bash
-echo "deb [signed-by=/etc/apt/keyrings/proxmox-release-bookworm.gpg] http://download.proxmox.com/debian/pve bookworm pve-no-subscription" | sudo tee /etc/apt/sources.list.d/pve.list
+echo "deb [signed-by=/etc/apt/keyrings/proxmox-release-trixie.gpg] http://download.proxmox.com/debian/pve trixie pve-no-subscription" | sudo tee /etc/apt/sources.list.d/pve.list
 ```
 
 Then, set the right permissions to the `keyring` directory, update again and install the `proxmox-auto-install-assistant`:
 
 ```bash
-sudo chmod 644 /etc/apt/keyrings/proxmox-release-bookworm.gpg
+sudo chmod 644 /etc/apt/keyrings/proxmox-release-trixie.gpg
 sudo apt update && sudo apt install -y proxmox-auto-install-assistant
 ```
 

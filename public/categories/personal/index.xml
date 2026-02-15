@@ -4,7 +4,7 @@
     <title>Personal on Thomas Lutkus</title>
     <link>http://localhost:1313/categories/personal/</link>
     <description>Recent content in Personal on Thomas Lutkus</description>
-    <generator>Hugo -- 0.155.2</generator>
+    <generator>Hugo -- 0.155.3</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 08 Jan 2026 16:16:29 +0000</lastBuildDate>
     <atom:link href="http://localhost:1313/categories/personal/index.xml" rel="self" type="application/rss+xml" />
@@ -13,8 +13,9 @@
       <link>http://localhost:1313/posts/why-have-a-blog/</link>
       <pubDate>Thu, 08 Jan 2026 16:16:29 +0000</pubDate>
       <guid>http://localhost:1313/posts/why-have-a-blog/</guid>
-      <description>&lt;p&gt;Hi there! I&amp;rsquo;m an infrastructure engineer with 15+ years of experience building and supporting Linux and network infrastructure. I built a team from scratch, I&amp;rsquo;m a &amp;ldquo;wear all hats&amp;rdquo; guy at my current job. More importantly, I&amp;rsquo;m a husband and father.&lt;/p&gt;
-&lt;p&gt;This blog is for sharing my knowledge and experiences in the tech industry. It&amp;rsquo;s also for writing thoughts and opinions. My hope is to express things which are meaningful and impactful. I also mean to write about technology and privacy.&lt;/p&gt;</description>
+      <description>&lt;p&gt;I&amp;rsquo;ve spent over fifteen years building and supporting Linux and network infrastructure. I&amp;rsquo;ve built teams from scratch, worn every hat there is, and written more internal documentation than I can count. But I never wrote publicly. Not because I had nothing to say, but because the timing wasn&amp;rsquo;t right.&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s right now.&lt;/p&gt;
+&lt;p&gt;This blog exists because I want to put real work and real thinking out into the world. Technical posts about what I&amp;rsquo;m actually building: Linux, Proxmox, automation, networking. And posts about what I&amp;rsquo;m actually thinking: work ethics, privacy, technology, whatever I&amp;rsquo;m working through at the time.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>

@@ -1,6 +1,6 @@
 +++
 title = "Virtual Proxmox Lab (Part 4) - Clustering: Corosync & Ceph"
-date = '2026-02-16T19:00:00Z'
+date = '2026-02-16T17:00:00Z'
 draft = false
 tags = ["proxmox","homelab","virsh"]
 series = ["virtualization"]

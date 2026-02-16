@@ -328,11 +328,11 @@ Systemd service units are files which define a service, and when/how it&rsquo;s 
 </li>
 </ul>
 <p><strong>How <code>enable</code> works:</strong> When you run <code>systemctl enable myservice</code>, Systemd reads the <code>[Install]</code> section and creates a symlink:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>/etc/systemd/system/multi-user.target.wants/myservice.service -&gt; /etc/systemd/system/myservice.service
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>/etc/systemd/system/multi-user.target.wants/myservice.service -&gt; /etc/systemd/system/myservice.service
 </span></span></code></pre></div><p><em>Vendor units live in <code>/usr/lib/systemd/system</code></em></p>
 <p>If there is no <code>[Install]</code> section, the unit can&rsquo;t be enabled/disabled, but runs only as a dependency.</p>
 <h2 id="minimal-service-template">Minimal Service Template<a hidden class="anchor" aria-hidden="true" href="#minimal-service-template">#</a></h2>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#66d9ef">[Unit]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#66d9ef">[Unit]</span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">Description</span><span style="color:#f92672">=</span><span style="color:#e6db74">My Custom Service</span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">After</span><span style="color:#f92672">=</span><span style="color:#e6db74">network.target</span>
 </span></span><span style="display:flex;"><span>
@@ -345,7 +345,7 @@ Systemd service units are files which define a service, and when/how it&rsquo;s 
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">WantedBy</span><span style="color:#f92672">=</span><span style="color:#e6db74">multi-user.target</span>
 </span></span></code></pre></div><h2 id="follow-along-example">Follow Along Example<a hidden class="anchor" aria-hidden="true" href="#follow-along-example">#</a></h2>
 <p>Let&rsquo;s set up a simple service to make sure that the concepts stick. First, write a simple shell script which just does something. If you want the easy way, as <code>root</code>, copy and paste the following heredoc:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat &gt; /usr/local/bin/myservice.sh <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat &gt; /usr/local/bin/myservice.sh <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">#!/bin/bash
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">while true; do
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    echo &#34;$(date): Running&#34; &gt;&gt; /tmp/myservice.log
@@ -354,10 +354,10 @@ Systemd service units are files which define a service, and when/how it&rsquo;s 
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
 </span></span><span style="display:flex;"><span>chmod +x /usr/local/bin/myservice.sh
 </span></span></code></pre></div><p>Test if your script works by running it with <code>/usr/local/bin/myservice.sh</code>. It will make the terminal busy. Press <code>CTRL+C</code> to stop it and check like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#f92672">[</span>root@server1 ~<span style="color:#f92672">]</span><span style="color:#75715e"># cat /tmp/myservice.log </span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#f92672">[</span>root@server1 ~<span style="color:#f92672">]</span><span style="color:#75715e"># cat /tmp/myservice.log </span>
 </span></span><span style="display:flex;"><span>Sun Jan <span style="color:#ae81ff">11</span> 06:42:17 PM GMT 2026: Running
 </span></span></code></pre></div><p>If it worked like in this example, you&rsquo;re gold. Next, choose your editor and create a unit file for <code>myservice.sh</code>. In my case I prefer vim (you should too): <code>vim /etc/systemd/system/myservice.service</code>:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#66d9ef">[Unit]</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#66d9ef">[Unit]</span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">Description</span><span style="color:#f92672">=</span><span style="color:#e6db74">A simple service which logs time every 10 sec</span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">After</span><span style="color:#f92672">=</span><span style="color:#e6db74">network.target</span>
 </span></span><span style="display:flex;"><span>
@@ -370,7 +370,7 @@ Systemd service units are files which define a service, and when/how it&rsquo;s 
 </span></span><span style="display:flex;"><span><span style="color:#66d9ef">[Install]</span>
 </span></span><span style="display:flex;"><span><span style="color:#a6e22e">WantedBy</span><span style="color:#f92672">=</span><span style="color:#e6db74">multi-user.target</span>
 </span></span></code></pre></div><p>Alternatively, if you&rsquo;re feeling lazy, copy and paste the heredoc:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat &gt; /etc/systemd/system/myservice.service <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat &gt; /etc/systemd/system/myservice.service <span style="color:#e6db74">&lt;&lt; &#39;EOF&#39;
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">[Unit]
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Description=A simple service which logs time every 10 sec
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">After=network.target
